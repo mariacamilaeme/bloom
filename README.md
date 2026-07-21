@@ -4,14 +4,30 @@ Compañía diaria de alimentación, medicamentos y bienestar — una app persona
 Es una **PWA estática** (sin servidor ni base de datos): todos los datos se guardan
 en el dispositivo de quien la usa (localStorage + IndexedDB). Nada sale a internet.
 
+## Stack y arquitectura
+
+Bloom es una **PWA estática instalable**, sin framework ni bundler:
+HTML semántico + CSS moderno (custom properties, `color-mix`, tokens de tema
+claro/oscuro y acento) + JavaScript vanilla (ES2020). Persistencia local con
+**localStorage** (estado) e **IndexedDB** (fotos). Funciona offline vía Service Worker.
+
+¿Por qué no React/Next? Para una app de un solo usuario, sin backend, la carga
+instantánea, el cero build y la privacidad total (nada sale del dispositivo) pesan
+más que un framework. El código está separado por responsabilidades para mantenerlo
+profesional y fácil de evolucionar. El salto a Next.js + Supabase tiene sentido el día
+que se quiera **sincronizar entre dispositivos** o **push real** (ver Notas).
+
 ## Archivos
 
 | Archivo | Qué es |
 |---|---|
-| `index.html` | Toda la app (HTML + CSS + JavaScript en un solo archivo) |
+| `index.html` | Estructura y marcado de la app |
+| `styles.css` | Todos los estilos (temas, componentes, animaciones) |
+| `app.js` | Toda la lógica (estado, render, recetas, calendario, fotos…) |
 | `manifest.webmanifest` | Hace la app instalable (nombre, ícono, color) |
 | `sw.js` | Service worker: la app abre aunque no haya internet |
 | `icon-192.png` / `icon-512.png` | Íconos de la app instalada |
+| `build-artifact.mjs` | Utilidad opcional: genera una versión de un solo archivo para compartir |
 
 ## Repositorio
 
@@ -35,8 +51,8 @@ npx vercel --prod
 
 ## Actualizar la app después de un cambio
 
-1. Reemplaza `index.html` (y lo que haya cambiado).
-2. **Sube el número de versión en `sw.js`** (`bloom-v1` → `bloom-v2`) para que
+1. Edita `styles.css`, `app.js` o `index.html` según corresponda.
+2. **Sube el número de versión en `sw.js`** (`bloom-v6` → `bloom-v7`) para que
    los teléfonos que ya la instalaron descarguen la versión nueva.
 3. Publica:
    ```
@@ -50,7 +66,7 @@ npx vercel --prod
 
 1. Abre la URL de Vercel en el navegador del teléfono.
 2. Menú → **"Añadir a pantalla de inicio"** (Android/Chrome la ofrece sola).
-3. Queda con su ícono 🌱, pantalla completa y funciona sin conexión.
+3. Queda con su ícono 🌸, pantalla completa y funciona sin conexión.
 
 ## Notas
 
