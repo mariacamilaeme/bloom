@@ -13,35 +13,38 @@ en el dispositivo de quien la usa (localStorage + IndexedDB). Nada sale a intern
 | `sw.js` | Service worker: la app abre aunque no haya internet |
 | `icon-192.png` / `icon-512.png` | Íconos de la app instalada |
 
+## Repositorio
+
+Código en GitHub (privado): https://github.com/mariacamilaeme/mi-plan-vital
+
 ## Desplegar en Vercel (primera vez)
 
-**Opción A — desde la terminal (recomendada):**
+**Opción recomendada — conectar el repositorio (despliegue automático):**
 
-1. Abre una terminal en esta carpeta (`app-salud`).
-2. Ejecuta:
-   ```
-   npx vercel login
-   ```
-   y sigue el enlace que te da para entrar con tu cuenta (o crearla).
-3. Ejecuta:
-   ```
-   npx vercel --prod
-   ```
-   Acepta las opciones por defecto (proyecto nuevo, sin build command, output = carpeta actual).
-4. Al terminar te da la URL pública, algo como `https://mi-plan-vital.vercel.app`.
+1. Entra a [vercel.com/new](https://vercel.com/new) con tu cuenta.
+2. Importa el repositorio `mariacamilaeme/mi-plan-vital` (autoriza el acceso de Vercel
+   a GitHub si te lo pide). Framework: **Other**, sin build command.
+3. Desde entonces, cada `git push` publica solo — no hay que correr nada más.
 
-**Opción B — con GitHub:**
+**Opción alternativa — desde la terminal:**
 
-1. Crea un repositorio en GitHub y sube esta carpeta.
-2. En [vercel.com/new](https://vercel.com/new) importa ese repositorio (framework: **Other**, sin build command).
-3. Cada vez que hagas push, Vercel redespliega solo.
+```
+npx vercel login
+npx vercel --prod
+```
 
 ## Actualizar la app después de un cambio
 
 1. Reemplaza `index.html` (y lo que haya cambiado).
 2. **Sube el número de versión en `sw.js`** (`plan-vital-v1` → `plan-vital-v2`) para que
    los teléfonos que ya la instalaron descarguen la versión nueva.
-3. Vuelve a ejecutar `npx vercel --prod` (o haz push si usas GitHub).
+3. Publica:
+   ```
+   git add -A
+   git commit -m "Descripción del cambio"
+   git push
+   ```
+   (con el repo conectado, Vercel despliega solo; si no, corre `npx vercel --prod`).
 
 ## Instalarla en el celular
 
