@@ -28,7 +28,7 @@ const PLAN_SEMILLA = [
     extra:{id:'de-tinto', em:'☕', lb:'1 tinto sin azúcar'}
   },
   {
-    id:'almuerzo', nombre:'Almuerzo + Omega 3', emoji:'🍽️',
+    id:'almuerzo', nombre:'Almuerzo', emoji:'🍽️',
     fijos:[
       {id:'al-agua', em:'💧', lb:'Vaso mediano de agua', dt:'250 ml'},
       {id:'al-prob', em:'✨', lb:'Probióticos Milenium'},
