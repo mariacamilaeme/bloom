@@ -88,7 +88,26 @@
   .dianav .flecha:disabled{opacity:.35; cursor:default}
   .dianav .centro{flex:1; position:relative; height:42px; background:var(--card); border:1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius:12px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:600; font-size:.92rem; box-shadow:var(--shadow); cursor:pointer}
   .dianav .centro .cal{font-size:1rem}
-  .dianav .centro input[type=date]{position:absolute; inset:0; opacity:0; width:100%; height:100%; cursor:pointer}
+  .dianav .centro .flechita{color:var(--ink-3); font-size:.75rem}
+  .dianav .centro[aria-expanded=true] .flechita{transform:rotate(180deg)}
+  .calendario{background:var(--card); border:1px solid color-mix(in srgb, var(--accent) 35%, var(--line)); border-radius:16px; padding:14px; margin-top:10px; box-shadow:var(--shadow); animation:desplegar .2s ease}
+  @keyframes desplegar{from{opacity:0; transform:translateY(-8px)} to{opacity:1; transform:translateY(0)}}
+  .cal-cab{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px}
+  .cal-mes{font-family:var(--f-display); font-weight:600; font-size:1.05rem; text-transform:capitalize}
+  .cal-nav{width:34px; height:34px; border-radius:10px; background:var(--card-2); font-size:1rem; color:var(--ink-2)}
+  .cal-nav:disabled{opacity:.35; cursor:default}
+  .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:4px}
+  .cal-sem{text-align:center; font-size:.65rem; font-weight:800; color:var(--ink-3); text-transform:uppercase; padding:4px 0}
+  .cal-dia{aspect-ratio:1; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:var(--f-mono); font-size:.82rem; font-variant-numeric:tabular-nums; color:var(--ink-2); position:relative; cursor:pointer}
+  .cal-dia:disabled{opacity:.3; cursor:default}
+  .cal-dia.racha{background:var(--accent); color:var(--accent-ink); font-weight:700}
+  .cal-dia.parcial{background:color-mix(in srgb, var(--accent) 18%, var(--card))}
+  .cal-dia.sel{outline:2px solid var(--accent-strong); outline-offset:1px}
+  .cal-dia.hoy::after{content:''; position:absolute; bottom:3px; width:4px; height:4px; border-radius:50%; background:var(--accent-strong)}
+  .cal-dia.hoy.racha::after{background:var(--accent-ink)}
+  .cal-pie{display:flex; gap:12px; margin-top:12px; font-size:.72rem; color:var(--ink-2); flex-wrap:wrap; align-items:center}
+  .cal-pie .dot{width:12px; height:12px; border-radius:50%; display:inline-block; vertical-align:-2px; margin-right:4px}
+  .cal-racha{margin-left:auto; font-weight:700; color:var(--accent-strong)}
   .volver-hoy{display:none; margin:10px auto 0; background:color-mix(in srgb, var(--accent) 14%, var(--card)); color:var(--accent-strong); font-size:.8rem; font-weight:700; border-radius:99px; padding:6px 16px; border:1px solid color-mix(in srgb, var(--accent) 40%, var(--line))}
   .volver-hoy.on{display:block}
   .aviso-pasado{display:none; margin-top:10px; font-size:.78rem; color:var(--ink-2); background:var(--card-2); border-radius:10px; padding:8px 12px; text-align:center}
@@ -310,13 +329,14 @@
   <section id="view-hoy" role="tabpanel" aria-label="Hoy">
     <div class="dianav">
       <button class="flecha" id="diaPrev" aria-label="Día anterior">‹</button>
-      <div class="centro" id="diaCentro">
+      <button class="centro" id="diaCentro" aria-expanded="false" aria-controls="calendario">
         <span class="cal" aria-hidden="true">📅</span>
         <span id="diaLabel">Hoy</span>
-        <input type="date" id="diaInput" aria-label="Elegir fecha">
-      </div>
+        <span class="flechita" aria-hidden="true">▾</span>
+      </button>
       <button class="flecha" id="diaNext" aria-label="Día siguiente">›</button>
     </div>
+    <div class="calendario" id="calendario" hidden></div>
     <button class="volver-hoy" id="btnVolverHoy">↩ Volver a hoy</button>
     <p class="aviso-pasado" id="avisoPasado">Estás viendo otro día — lo que marques o desmarques se guarda en esa fecha.</p>
 
@@ -949,8 +969,6 @@ function renderDiaNav(){
   const hoy = bogota().date;
   const esHoy = viewDate === hoy;
   document.getElementById('diaLabel').textContent = esHoy ? `Hoy · ${fechaCorta(viewDate)}` : fechaBonita(viewDate);
-  const inp = document.getElementById('diaInput');
-  inp.value = viewDate; inp.max = hoy;
   document.getElementById('diaNext').disabled = esHoy;
   document.getElementById('btnVolverHoy').classList.toggle('on', !esHoy);
   document.getElementById('avisoPasado').classList.toggle('on', !esHoy);
@@ -962,11 +980,71 @@ function irADia(dateStr){
   viewDate = dateStr;
   renderDiaNav();
   renderTimeline();
+  if(!document.getElementById('calendario').hidden){ calMes = viewDate.slice(0,7); renderCalendario(); }
 }
 document.getElementById('diaPrev').addEventListener('click', ()=> irADia(diasAtras(viewDate,1)));
 document.getElementById('diaNext').addEventListener('click', ()=> irADia(diasAtras(viewDate,-1)));
 document.getElementById('btnVolverHoy').addEventListener('click', ()=> irADia(bogota().date));
-document.getElementById('diaInput').addEventListener('change', e => { if(e.target.value) irADia(e.target.value); });
+
+/* ---------- Calendario desplegable con días de racha ---------- */
+let calMes = null; // 'YYYY-MM' del mes visible
+function mesVecino(ym, delta){
+  const [y, m] = ym.split('-').map(Number);
+  return new Date(Date.UTC(y, m-1+delta, 1)).toISOString().slice(0,7);
+}
+function toggleCalendario(){
+  const cal = document.getElementById('calendario');
+  const abierto = !cal.hidden;
+  if(abierto){
+    cal.hidden = true;
+  } else {
+    calMes = viewDate.slice(0,7);
+    renderCalendario();
+    cal.hidden = false;
+  }
+  document.getElementById('diaCentro').setAttribute('aria-expanded', String(!abierto));
+}
+document.getElementById('diaCentro').addEventListener('click', toggleCalendario);
+function renderCalendario(){
+  const hoy = bogota().date;
+  const [y, m] = calMes.split('-').map(Number);
+  const nDias = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const primerDow = (new Date(Date.UTC(y, m-1, 1)).getUTCDay() + 6) % 7; // lunes = 0
+  const mesLabel = new Date(Date.UTC(y, m-1, 1)).toLocaleDateString('es-CO', {timeZone:'UTC', month:'long', year:'numeric'});
+  const r = rachas();
+  let html = `<div class="cal-cab">
+    <button class="cal-nav" id="calPrev" aria-label="Mes anterior">‹</button>
+    <span class="cal-mes">${mesLabel}</span>
+    <button class="cal-nav" id="calNext" aria-label="Mes siguiente" ${calMes >= hoy.slice(0,7) ? 'disabled' : ''}>›</button>
+  </div><div class="cal-grid">`;
+  for(const d of ['L','M','X','J','V','S','D']) html += `<span class="cal-sem">${d}</span>`;
+  for(let i=0; i<primerDow; i++) html += `<span></span>`;
+  for(let dia=1; dia<=nDias; dia++){
+    const f = `${calMes}-${String(dia).padStart(2,'0')}`;
+    const futuro = f > hoy;
+    const clases = ['cal-dia'];
+    if(!futuro){
+      if(statsDe(f).cumplido) clases.push('racha');
+      else if(tieneRegistros(f)) clases.push('parcial');
+    }
+    if(f === viewDate) clases.push('sel');
+    if(f === hoy) clases.push('hoy');
+    html += `<button class="${clases.join(' ')}" data-caldia="${f}" ${futuro?'disabled':''} aria-label="${fechaBonita(f)}">${dia}</button>`;
+  }
+  html += `</div><div class="cal-pie">
+    <span><span class="dot" style="background:var(--accent)"></span>Día de racha</span>
+    <span><span class="dot" style="background:color-mix(in srgb, var(--accent) 18%, var(--card)); border:1px solid var(--line)"></span>Con registros</span>
+    <span class="cal-racha">🔥 ${r.actual} ${r.actual===1?'día':'días'}</span>
+  </div>`;
+  const cal = document.getElementById('calendario');
+  cal.innerHTML = html;
+  document.getElementById('calPrev').addEventListener('click', () => { calMes = mesVecino(calMes, -1); renderCalendario(); });
+  document.getElementById('calNext').addEventListener('click', () => { calMes = mesVecino(calMes, 1); renderCalendario(); });
+  cal.querySelectorAll('[data-caldia]').forEach(b => b.addEventListener('click', () => {
+    irADia(b.dataset.caldia);
+    toggleCalendario();
+  }));
+}
 
 /* ---------- Render: timeline ---------- */
 function itemHTML(it, tipo, bloqueId, checked){
