@@ -1,0 +1,1802 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#3E8E5E">
+<meta name="description" content="Seguimiento diario de alimentación, medicamentos y peso">
+<title>Mi Plan Vital</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body>
+<style>
+  /* ============ TOKENS ============ */
+  :root{
+    --ground:#F4F6F2;
+    --card:#FFFFFF;
+    --card-2:#EDF1EB;
+    --ink:#24282A;
+    --ink-2:#5C6560;
+    --ink-3:#8A948E;
+    --line:#DFE5DD;
+    --accent:#A9DCC0;
+    --accent-ink:#2A322C;
+    --accent-strong:#2F7050;
+    --fondo:color-mix(in srgb, var(--accent) 9%, var(--ground));
+    --danger:#B4472E;
+    /* Narrativa amanecer → noche (validada CVD, modo claro) */
+    --b1:#D96A4E; /* al despertar · coral */
+    --b2:#B5822A; /* desayuno · dorado */
+    --b3:#3E8E5E; /* almuerzo · verde */
+    --b4:#C9702E; /* media tarde · ámbar */
+    --b5:#5C6BC0; /* cena · índigo */
+    --shadow:0 1px 3px rgba(30,40,32,.08), 0 4px 16px rgba(30,40,32,.06);
+    --f-display:Georgia,'Iowan Old Style','Noto Serif','Times New Roman',serif;
+    --f-body:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans',sans-serif;
+    --f-mono:ui-monospace,'SF Mono','Cascadia Mono','Roboto Mono',Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --ground:#141715; --card:#1E2320; --card-2:#252B27;
+      --ink:#E9ECE8; --ink-2:#9BA69F; --ink-3:#77817B; --line:#333B35;
+      --accent:#A9DCC0; --accent-ink:#2A322C; --accent-strong:#8FD1AF; --danger:#E07B5F;
+      --b1:#D96E50; --b2:#B9882F; --b3:#4C9E6B; --b4:#CE7A38; --b5:#7C8AE0;
+      --shadow:0 1px 3px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.3);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#141715; --card:#1E2320; --card-2:#252B27;
+    --ink:#E9ECE8; --ink-2:#9BA69F; --ink-3:#77817B; --line:#333B35;
+    --accent:#A9DCC0; --accent-ink:#2A322C; --accent-strong:#8FD1AF; --danger:#E07B5F;
+    --b1:#D96E50; --b2:#B9882F; --b3:#4C9E6B; --b4:#CE7A38; --b5:#7C8AE0;
+    --shadow:0 1px 3px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.3);
+  }
+  :root[data-theme="light"]{
+    --ground:#F4F6F2; --card:#FFFFFF; --card-2:#EDF1EB;
+    --ink:#24282A; --ink-2:#5C6560; --ink-3:#8A948E; --line:#DFE5DD;
+    --accent:#A9DCC0; --accent-ink:#2A322C; --accent-strong:#2F7050; --danger:#B4472E;
+    --b1:#D96A4E; --b2:#B5822A; --b3:#3E8E5E; --b4:#C9702E; --b5:#5C6BC0;
+    --shadow:0 1px 3px rgba(30,40,32,.08), 0 4px 16px rgba(30,40,32,.06);
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:var(--fondo); color:var(--ink);
+    font-family:var(--f-body); font-size:16px; line-height:1.5;
+    min-height:100vh; padding-bottom:calc(76px + env(safe-area-inset-bottom));
+  }
+  .wrap{max-width:480px; margin:0 auto; padding:0 16px}
+  button{font:inherit; color:inherit; background:none; border:none; cursor:pointer}
+  input,select,textarea{font:inherit; color:inherit}
+  :focus-visible{outline:2px solid var(--accent-strong); outline-offset:2px; border-radius:6px}
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation:none !important; transition:none !important}
+  }
+
+  /* ============ CABECERA ============ */
+  header.top{padding:20px 0 4px}
+  .fecha{font-family:var(--f-mono); font-size:.78rem; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3)}
+  h1.saludo{font-family:var(--f-display); font-weight:600; font-size:1.7rem; line-height:1.2; margin-top:2px; text-wrap:balance; color:var(--accent-strong)}
+  .frase{font-family:var(--f-display); font-style:italic; font-size:1.02rem; color:var(--ink-2); margin-top:10px; text-wrap:balance; border-left:3px solid var(--accent-strong); background:color-mix(in srgb, var(--accent) 14%, var(--card)); padding:10px 14px; border-radius:0 14px 14px 0}
+
+  /* ============ NAVEGADOR DE DÍAS ============ */
+  .dianav{display:flex; align-items:center; gap:8px; margin-top:16px}
+  .dianav .flecha{flex:none; width:42px; height:42px; border-radius:12px; background:var(--card); border:1px solid var(--line); font-size:1.1rem; color:var(--ink-2); display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow)}
+  .dianav .flecha:disabled{opacity:.35; cursor:default}
+  .dianav .centro{flex:1; position:relative; height:42px; background:var(--card); border:1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius:12px; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:600; font-size:.92rem; box-shadow:var(--shadow); cursor:pointer}
+  .dianav .centro .cal{font-size:1rem}
+  .dianav .centro input[type=date]{position:absolute; inset:0; opacity:0; width:100%; height:100%; cursor:pointer}
+  .volver-hoy{display:none; margin:10px auto 0; background:color-mix(in srgb, var(--accent) 14%, var(--card)); color:var(--accent-strong); font-size:.8rem; font-weight:700; border-radius:99px; padding:6px 16px; border:1px solid color-mix(in srgb, var(--accent) 40%, var(--line))}
+  .volver-hoy.on{display:block}
+  .aviso-pasado{display:none; margin-top:10px; font-size:.78rem; color:var(--ink-2); background:var(--card-2); border-radius:10px; padding:8px 12px; text-align:center}
+  .aviso-pasado.on{display:block}
+
+  /* ============ TARJETA RESUMEN ============ */
+  .resumen{display:flex; align-items:center; gap:18px; background:var(--card); border:1px solid color-mix(in srgb, var(--accent) 35%, var(--line)); border-radius:18px; padding:16px; margin-top:12px; box-shadow:var(--shadow)}
+  .anillo{position:relative; width:88px; height:88px; flex:none}
+  .anillo svg{transform:rotate(-90deg)}
+  .anillo .base{stroke:color-mix(in srgb, var(--accent) 22%, var(--card-2)); fill:none; stroke-width:9}
+  .anillo .val{stroke:var(--accent); fill:none; stroke-width:9; stroke-linecap:round; transition:stroke-dashoffset .5s ease}
+  .anillo .pct{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:var(--f-mono); font-size:1.15rem; font-weight:700; font-variant-numeric:tabular-nums}
+  .res-datos{flex:1; min-width:0}
+  .res-datos .titulo{font-weight:600; font-size:.95rem}
+  .res-datos .sub{font-size:.82rem; color:var(--ink-2); font-variant-numeric:tabular-nums}
+  .chips{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px}
+  .chip{display:inline-flex; align-items:center; gap:5px; background:var(--card-2); border-radius:99px; padding:3px 10px; font-size:.78rem; font-weight:600; font-variant-numeric:tabular-nums}
+  .chip.ok{background:color-mix(in srgb, var(--accent) 20%, var(--card)); color:var(--accent-strong)}
+  #chipRacha{background:color-mix(in srgb, var(--accent) 16%, var(--card)); color:var(--accent-strong)}
+
+  .banner-fiesta{display:none; margin-top:12px; background:color-mix(in srgb, var(--accent) 14%, var(--card)); border:1px solid color-mix(in srgb, var(--accent) 40%, var(--line)); color:var(--ink); border-radius:14px; padding:12px 16px; font-weight:600; text-align:center}
+  .banner-fiesta.on{display:block; animation:pop .4s ease}
+  .banner-fiesta .sub{display:block; font-weight:400; font-family:var(--f-display); font-style:italic; font-size:.9rem; color:var(--ink-2); margin-top:2px}
+  @keyframes pop{0%{transform:scale(.95); opacity:0} 100%{transform:scale(1); opacity:1}}
+
+  /* ============ TIMELINE ============ */
+  .timeline{margin-top:22px; position:relative}
+  .bloque{position:relative; padding-left:30px; padding-bottom:22px}
+  .bloque::before{
+    content:''; position:absolute; left:9px; top:26px; bottom:-4px; width:3px; border-radius:2px;
+    background:linear-gradient(to bottom, var(--bc), var(--bc-next, var(--bc)));
+    opacity:.45;
+  }
+  .bloque:last-child::before{display:none}
+  .bloque .punto{position:absolute; left:0; top:6px; width:21px; height:21px; border-radius:50%; background:var(--bc); border:4px solid var(--fondo); box-shadow:0 0 0 2px var(--bc)}
+  .bloque.hecho .punto::after{content:'✓'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:.65rem; font-weight:800}
+  .b-cab{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:8px}
+  .b-hora{font-family:var(--f-mono); font-size:.8rem; font-weight:700; color:var(--bc); letter-spacing:.03em; font-variant-numeric:tabular-nums}
+  .b-nombre{font-family:var(--f-display); font-size:1.18rem; font-weight:600}
+  .b-foto{flex:none; align-self:center; margin-left:auto; width:36px; height:36px; border-radius:10px; border:1.5px dashed color-mix(in srgb, var(--accent-strong) 40%, var(--line)); background:var(--card); color:var(--ink-3); font-size:1rem; display:flex; align-items:center; justify-content:center; padding:0; cursor:pointer}
+  .fotos-comida{display:flex; gap:8px; overflow-x:auto; padding:10px 0 6px; border-top:1px dashed var(--line); margin-top:4px; scrollbar-width:none}
+  .fotos-comida::-webkit-scrollbar{display:none}
+  .fc-thumb{flex:none; width:64px; height:64px; border-radius:10px; overflow:hidden; padding:0; border:1px solid color-mix(in srgb, var(--accent) 40%, var(--line)); cursor:pointer}
+  .fc-thumb img{width:100%; height:100%; object-fit:cover; display:block}
+  .chip-ahora{display:none; background:var(--bc); color:#fff; font-size:.68rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; border-radius:99px; padding:2px 9px}
+  .bloque.ahora .chip-ahora{display:inline-block}
+  .b-card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:6px 14px; box-shadow:var(--shadow)}
+  .bloque.ahora .b-card{border-color:var(--bc); box-shadow:0 0 0 1px var(--bc), var(--shadow)}
+
+  /* items */
+  .item{display:flex; align-items:flex-start; gap:11px; padding:10px 0; border-bottom:1px solid var(--line)}
+  .item:last-child{border-bottom:none}
+  .item input{position:absolute; opacity:0; width:28px; height:28px}
+  .caja{flex:none; width:24px; height:24px; margin-top:1px; border-radius:8px; border:2px solid color-mix(in srgb, var(--accent-strong) 50%, var(--ink-3)); display:flex; align-items:center; justify-content:center; transition:all .15s ease; background:var(--card)}
+  .item input[type=radio] + .caja{border-radius:50%}
+  .item input:checked + .caja{background:var(--accent); border-color:var(--accent)}
+  .item input:checked + .caja::after{content:'✓'; color:var(--accent-ink); font-size:.85rem; font-weight:800}
+  .item input[type=radio]:checked + .caja::after{content:'●'; font-size:.6rem}
+  .item input:focus-visible + .caja{outline:2px solid var(--accent); outline-offset:2px}
+  .item .tx{flex:1; min-width:0}
+  .item .em{flex:none; font-size:1.05rem; margin-top:0}
+  .item .lb{font-size:.94rem; font-weight:500}
+  .item .dt{font-size:.8rem; color:var(--ink-2); line-height:1.4; display:block}
+  .item input:checked ~ .tx .lb{color:var(--ink-3); text-decoration:line-through; text-decoration-thickness:1.5px}
+  label.item{cursor:pointer; position:relative}
+
+  /* medicamentos */
+  .item.med{background:color-mix(in srgb, var(--bc) 9%, var(--card)); margin:8px -14px; padding:10px 14px; border-bottom:none; border-left:4px solid var(--bc)}
+  .item.med .eyebrow{display:block; font-size:.65rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--bc)}
+  .item.med .lb{font-weight:700}
+  .item.med input:checked + .caja{background:var(--bc); border-color:var(--bc)}
+  .item.omega{background:color-mix(in srgb, var(--b5) 8%, var(--card)); margin:8px -14px; padding:10px 14px; border-bottom:none; border-left:4px solid var(--b3)}
+  .item.omega .eyebrow{display:block; font-size:.65rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--b3)}
+
+  .grupo-titulo{font-size:.72rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--accent-strong); padding:12px 0 2px}
+  fieldset{border:none}
+  .extra-titulo{font-size:.72rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--accent-strong); padding:12px 0 2px}
+  .nota{font-size:.8rem; color:var(--ink-2); background:var(--card-2); border-radius:10px; padding:10px 12px; margin:10px 0; line-height:1.45}
+  .nota b{color:var(--ink)}
+
+  /* recetas dentro del bloque */
+  .rec-dia{padding:10px 0 12px; border-top:1px dashed var(--line); margin-top:4px}
+  .rec-dia .t{font-size:.72rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3); margin-bottom:6px}
+  .rec-chips{display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none}
+  .rec-chips::-webkit-scrollbar{display:none}
+  .rec-chip{flex:none; background:var(--card-2); border:1px solid var(--line); border-radius:99px; padding:5px 12px; font-size:.8rem; font-weight:600; white-space:nowrap}
+  .rec-chip[aria-pressed=true]{background:color-mix(in srgb, var(--accent) 22%, var(--card)); border-color:var(--accent-strong); color:var(--accent-strong)}
+
+  details.reco{margin-top:6px; background:var(--card); border:1px solid color-mix(in srgb, var(--accent) 25%, var(--line)); border-radius:16px; padding:14px 16px}
+  details.reco summary{cursor:pointer; font-weight:600; font-size:.95rem; list-style:none; display:flex; align-items:center; gap:8px}
+  details.reco summary::after{content:'▾'; margin-left:auto; color:var(--ink-3); transition:transform .2s}
+  details.reco[open] summary::after{transform:rotate(180deg)}
+  details.reco ul{margin:10px 0 2px 4px; list-style:none}
+  details.reco li{padding:6px 0; font-size:.88rem; color:var(--ink-2); border-bottom:1px solid var(--line)}
+  details.reco li:last-child{border-bottom:none}
+
+  /* ============ PROGRESO ============ */
+  .tiles{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:16px}
+  .tile{background:var(--card); border:1px solid color-mix(in srgb, var(--accent) 30%, var(--line)); border-radius:14px; padding:12px 10px; text-align:center; box-shadow:var(--shadow)}
+  .tile .n{font-family:var(--f-mono); font-size:1.35rem; font-weight:700; font-variant-numeric:tabular-nums; line-height:1.1; color:var(--accent-strong)}
+  .tile .l{font-size:.68rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); margin-top:3px}
+  .seccion{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; margin-top:14px; box-shadow:var(--shadow)}
+  .seccion h2{font-family:var(--f-display); font-size:1.15rem; font-weight:600; margin-bottom:4px; border-left:4px solid var(--accent); padding-left:10px}
+  .seccion .desc{font-size:.82rem; color:var(--ink-2); margin-bottom:10px}
+  .peso-form{display:flex; gap:8px; margin-top:10px}
+  .peso-form input{flex:1; min-width:0; background:var(--ground); border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-family:var(--f-mono); font-size:1rem}
+  .btn{background:var(--accent); color:var(--accent-ink); font-weight:700; border-radius:10px; padding:10px 18px; font-size:.92rem}
+  .btn:active{opacity:.85}
+  .btn.sec{background:var(--card-2); color:var(--ink)}
+  .btn.peligro{background:transparent; color:var(--danger); border:1.5px solid var(--danger)}
+  #chartWrap{overflow-x:auto; margin-top:6px}
+  #chartTip{position:absolute; pointer-events:none; background:var(--ink); color:var(--ground); font-family:var(--f-mono); font-size:.75rem; padding:4px 8px; border-radius:6px; transform:translate(-50%,-130%); white-space:nowrap; display:none; z-index:5}
+  .hist-fila{display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line)}
+  .hist-fila:last-child{border-bottom:none}
+  .hist-fecha{font-family:var(--f-mono); font-size:.78rem; color:var(--ink-2); width:74px; flex:none; font-variant-numeric:tabular-nums}
+  .hist-barra{flex:1; height:8px; background:var(--card-2); border-radius:99px; overflow:hidden}
+  .hist-barra > div{height:100%; background:linear-gradient(90deg, var(--accent), var(--accent-strong)); border-radius:99px}
+  .hist-pct{font-family:var(--f-mono); font-size:.78rem; width:42px; text-align:right; font-variant-numeric:tabular-nums}
+  .hist-med{flex:none; font-size:.8rem; width:20px; text-align:center}
+  .fotos-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px}
+  .fotos-grid figure{position:relative; border-radius:10px; overflow:hidden; aspect-ratio:3/4; background:var(--card-2)}
+  .fotos-grid img{width:100%; height:100%; object-fit:cover; display:block}
+  .fotos-grid figcaption{position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,.55); color:#fff; font-family:var(--f-mono); font-size:.65rem; padding:2px 6px; text-align:center}
+  .subir-foto{display:flex; align-items:center; justify-content:center; border:1.5px dashed var(--line); border-radius:10px; aspect-ratio:3/4; color:var(--ink-3); font-size:1.6rem; cursor:pointer}
+
+  /* ============ RECETAS ============ */
+  .rec-lista{margin-top:4px}
+  .rec-bloque-t{font-family:var(--f-display); font-size:1.05rem; font-weight:600; margin:16px 0 6px; display:flex; align-items:center; gap:8px}
+  .rec-bloque-t .dot{width:10px; height:10px; border-radius:50%; background:var(--bc); flex:none}
+  .rec-card{display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:8px; box-shadow:var(--shadow); cursor:pointer}
+  .rec-card .thumb{width:56px; height:56px; border-radius:10px; object-fit:cover; flex:none; background:var(--card-2)}
+  .rec-card .cuerpo{flex:1; min-width:0}
+  .rec-card .n{font-weight:700; font-size:.95rem}
+  .rec-card .base{font-size:.75rem; color:var(--ink-3); font-style:italic}
+  .rec-card .ing{font-size:.82rem; color:var(--ink-2); margin-top:4px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+  .rec-vacio{font-size:.85rem; color:var(--ink-3); text-align:center; padding:24px 12px; border:1.5px dashed var(--line); border-radius:14px; margin-top:14px}
+  .campo-v{margin-bottom:12px}
+  .campo-v label{display:block; font-size:.78rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-3); margin-bottom:4px}
+  .campo-v input[type=text], .campo-v select, .campo-v textarea{width:100%; background:var(--ground); border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:.92rem}
+  .campo-v textarea{min-height:84px; resize:vertical}
+  .form-acciones{display:flex; gap:10px; margin-top:14px}
+  .form-acciones .btn{flex:1}
+  .recfoto-zona{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+  .recfoto-zona img{width:84px; height:84px; border-radius:12px; object-fit:cover; background:var(--card-2)}
+  .recfoto-zona .btn{padding:8px 14px; font-size:.8rem}
+  .recfoto-add{display:flex; align-items:center; justify-content:center; gap:8px; width:100%; border:1.5px dashed var(--line); border-radius:12px; padding:14px; color:var(--ink-3); font-size:.88rem; font-weight:600; cursor:pointer}
+
+  /* ============ AJUSTES ============ */
+  .campo{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 0; border-bottom:1px solid var(--line)}
+  .campo:last-child{border-bottom:none}
+  .campo .et{font-size:.92rem; font-weight:500}
+  .campo .et small{display:block; font-weight:400; font-size:.76rem; color:var(--ink-3)}
+  .campo input[type=time], .campo input[type=number], .campo input[type=text]{background:var(--ground); border:1px solid var(--line); border-radius:8px; padding:7px 10px; font-family:var(--f-mono); font-size:.9rem; width:130px; text-align:center}
+  .campo input[type=text]{font-family:var(--f-body); text-align:left}
+  .seg{display:flex; background:var(--card-2); border-radius:12px; padding:3px; margin-top:8px}
+  .seg button{flex:1; padding:8px 4px; border-radius:9px; font-size:.82rem; font-weight:600; color:var(--ink-2)}
+  .seg button[aria-pressed=true]{background:var(--card); color:var(--ink); box-shadow:var(--shadow)}
+  .acentos{display:flex; gap:12px; margin-top:14px; flex-wrap:wrap}
+  .sw-color{width:40px; height:40px; border-radius:50%; background:var(--sw); border:3px solid var(--line); position:relative; flex:none}
+  .sw-color[aria-pressed=true]{border-color:var(--ink)}
+  .sw-color[aria-pressed=true]::after{content:'✓'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#3A423C; font-weight:800; font-size:1rem; text-shadow:0 1px 2px rgba(255,255,255,.5)}
+  .sw-custom{background:conic-gradient(#F2BCCB,#F5C8A4,#F2E3A8,#A9DCC0,#A6DEDC,#AECBEB,#C3BCEC,#F2BCCB); cursor:pointer; overflow:hidden}
+  .sw-custom input{position:absolute; inset:-6px; opacity:0; width:calc(100% + 12px); height:calc(100% + 12px); cursor:pointer}
+  .sw-custom::before{content:'🎨'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:1rem; pointer-events:none}
+  .sw-custom[aria-pressed=true]::after{content:'✓'}
+  .sw-custom[aria-pressed=true]::before{content:''}
+  .acento-nombre{font-size:.8rem; color:var(--ink-2); margin-top:8px}
+  .sw{position:relative; width:48px; height:28px; flex:none}
+  .sw input{position:absolute; opacity:0; width:100%; height:100%; cursor:pointer}
+  .sw .pista{position:absolute; inset:0; background:var(--card-2); border:1px solid var(--line); border-radius:99px; transition:background .2s}
+  .sw .bola{position:absolute; top:3px; left:3px; width:22px; height:22px; background:#fff; border-radius:50%; box-shadow:0 1px 3px rgba(0,0,0,.25); transition:transform .2s}
+  .sw input:checked ~ .pista{background:var(--accent); border-color:var(--accent)}
+  .sw input:checked ~ .bola{transform:translateX(20px)}
+  .sw input:focus-visible ~ .pista{outline:2px solid var(--accent); outline-offset:2px}
+  .aviso{font-size:.78rem; color:var(--ink-2); background:var(--card-2); border-radius:10px; padding:10px 12px; margin-top:10px; line-height:1.45}
+
+  /* ============ NAV / TOAST / MODAL ============ */
+  nav.tabbar{position:fixed; bottom:0; left:0; right:0; background:color-mix(in srgb, var(--card) 92%, transparent); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border-top:1px solid var(--line); z-index:10}
+  nav.tabbar .inner{max-width:480px; margin:0 auto; display:flex; padding-bottom:env(safe-area-inset-bottom)}
+  nav.tabbar button{flex:1; padding:9px 0 10px; display:flex; flex-direction:column; align-items:center; gap:3px; font-size:.66rem; font-weight:700; letter-spacing:.03em; color:var(--ink-3)}
+  nav.tabbar button .ic{font-size:1.25rem; line-height:1; padding:3px 16px; border-radius:99px; transition:background .2s}
+  nav.tabbar button[aria-selected=true]{color:var(--accent-strong)}
+  nav.tabbar button[aria-selected=true] .ic{background:color-mix(in srgb, var(--accent) 30%, var(--card))}
+  #toast{position:fixed; bottom:calc(84px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%) translateY(20px); background:var(--ink); color:var(--ground); padding:9px 18px; border-radius:99px; font-size:.85rem; font-weight:600; opacity:0; pointer-events:none; transition:all .25s ease; z-index:30; white-space:nowrap}
+  #toast.on{opacity:1; transform:translateX(-50%) translateY(0)}
+  #modal{position:fixed; inset:0; background:rgba(10,14,11,.55); display:none; align-items:center; justify-content:center; z-index:40; padding:24px}
+  #modal.on{display:flex}
+  #modal .caja-m{background:var(--card); border-radius:18px; padding:22px; max-width:340px; width:100%; box-shadow:var(--shadow)}
+  #modal h3{font-family:var(--f-display); font-size:1.15rem; margin-bottom:6px}
+  #modal p{font-size:.88rem; color:var(--ink-2); margin-bottom:16px}
+  #modal .acciones{display:flex; gap:10px; justify-content:flex-end}
+  #recetaSheet{position:fixed; inset:0; background:rgba(10,14,11,.55); display:none; align-items:flex-end; justify-content:center; z-index:45}
+  #recetaSheet.on{display:flex}
+  #recetaSheet .hoja{background:var(--card); border-radius:22px 22px 0 0; width:100%; max-width:480px; max-height:82vh; overflow-y:auto; padding:14px 20px calc(20px + env(safe-area-inset-bottom)); animation:subir .25s ease}
+  @keyframes subir{from{transform:translateY(30px); opacity:0} to{transform:translateY(0); opacity:1}}
+  #recetaSheet .asa{width:44px; height:5px; border-radius:99px; background:var(--line); margin:0 auto 14px}
+  #recetaSheet img.foto{width:100%; max-height:220px; object-fit:cover; border-radius:14px; margin-bottom:12px; background:var(--card-2)}
+  #recetaSheet h3{font-family:var(--f-display); font-size:1.3rem; color:var(--accent-strong)}
+  #recetaSheet .base-r{font-size:.8rem; color:var(--ink-3); font-style:italic; margin-bottom:6px}
+  #recetaSheet .sub-r{font-size:.72rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--accent-strong); margin:12px 0 4px}
+  #recetaSheet .tx-r{font-size:.9rem; color:var(--ink-2); white-space:pre-line; line-height:1.5}
+  #recetaSheet .acciones-r{display:flex; gap:10px; margin-top:18px}
+  #recetaSheet .acciones-r .btn{flex:1}
+  #visorFoto{position:fixed; inset:0; background:rgba(5,8,6,.92); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:50; padding:20px}
+  #visorFoto.on{display:flex}
+  #visorFoto img{max-width:100%; max-height:75vh; border-radius:12px}
+  #visorFoto .acciones{display:flex; gap:12px; margin-top:16px}
+  #visorFoto .fecha-f{color:#fff; font-family:var(--f-mono); font-size:.8rem; margin-top:10px}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="fecha" id="fechaHoy">—</div>
+    <h1 class="saludo" id="saludo">Hola</h1>
+    <p class="frase" id="fraseDia">—</p>
+  </header>
+
+  <!-- ============ VISTA HOY ============ -->
+  <section id="view-hoy" role="tabpanel" aria-label="Hoy">
+    <div class="dianav">
+      <button class="flecha" id="diaPrev" aria-label="Día anterior">‹</button>
+      <div class="centro" id="diaCentro">
+        <span class="cal" aria-hidden="true">📅</span>
+        <span id="diaLabel">Hoy</span>
+        <input type="date" id="diaInput" aria-label="Elegir fecha">
+      </div>
+      <button class="flecha" id="diaNext" aria-label="Día siguiente">›</button>
+    </div>
+    <button class="volver-hoy" id="btnVolverHoy">↩ Volver a hoy</button>
+    <p class="aviso-pasado" id="avisoPasado">Estás viendo otro día — lo que marques o desmarques se guarda en esa fecha.</p>
+
+    <div class="resumen">
+      <div class="anillo" aria-hidden="true">
+        <svg width="88" height="88" viewBox="0 0 88 88">
+          <circle class="base" cx="44" cy="44" r="36"></circle>
+          <circle class="val" id="anilloVal" cx="44" cy="44" r="36" stroke-dasharray="226.2" stroke-dashoffset="226.2"></circle>
+        </svg>
+        <div class="pct" id="anilloPct">0%</div>
+      </div>
+      <div class="res-datos">
+        <div class="titulo" id="resumenTitulo">Progreso de hoy</div>
+        <div class="sub" id="resumenSub">0 de 0 puntos</div>
+        <div class="chips">
+          <span class="chip" id="chipRacha">🔥 0 días</span>
+          <span class="chip" id="chipMeds">💊 0/4</span>
+        </div>
+      </div>
+    </div>
+    <div class="banner-fiesta" id="bannerFiesta" role="status">
+      ¡Día completo! 🎉
+      <span class="sub" id="bannerFrase"></span>
+    </div>
+
+    <div class="timeline" id="timeline"></div>
+    <input type="file" id="inFotoComida" accept="image/*" capture="environment" hidden>
+
+    <details class="reco">
+      <summary>⭐ Recomendados</summary>
+      <ul>
+        <li>Infusión fría Tosh — frutos tropicales</li>
+        <li>Infusión fría Tosh — flor de Jamaica y frambuesa</li>
+        <li>Probióticos Milenium</li>
+        <li>Probióticos PROB</li>
+        <li>Proteína Isolate Gourmet</li>
+        <li>Proteína Gold Standard</li>
+      </ul>
+    </details>
+  </section>
+
+  <!-- ============ VISTA RECETAS ============ -->
+  <section id="view-recetas" role="tabpanel" aria-label="Recetas" hidden>
+    <div class="seccion">
+      <h2>Mis recetas 🧑‍🍳</h2>
+      <p class="desc">Las opciones de tu dieta ya están cargadas como recetas: tócalas para completarlas o ponerles foto. También puedes crear las tuyas. Luego, en la vista de Hoy, eliges cuál preparaste cada día.</p>
+      <button class="btn" id="btnNuevaReceta" style="width:100%">＋ Nueva receta</button>
+    </div>
+
+    <div class="seccion" id="recFormSec" hidden>
+      <h2 id="recFormTitulo">Nueva receta</h2>
+      <div class="campo-v">
+        <label for="recNombre">Nombre</label>
+        <input type="text" id="recNombre" placeholder="Ej: Burrito ranchero de pollo" maxlength="60">
+      </div>
+      <div class="campo-v">
+        <label for="recBloque">Comida</label>
+        <select id="recBloque"></select>
+      </div>
+      <div class="campo-v">
+        <label for="recOpcion">Basada en la opción</label>
+        <select id="recOpcion"></select>
+      </div>
+      <div class="campo-v">
+        <label for="recIng">Ingredientes</label>
+        <textarea id="recIng" placeholder="Uno por línea, con cantidades"></textarea>
+      </div>
+      <div class="campo-v">
+        <label for="recPrep">Preparación / notas</label>
+        <textarea id="recPrep" placeholder="Pasos, trucos, tiempo…"></textarea>
+      </div>
+      <div class="campo-v">
+        <label>Foto de ilustración</label>
+        <div class="recfoto-zona" id="recFotoZona"></div>
+        <input type="file" id="recFotoIn" accept="image/*" hidden>
+      </div>
+      <div class="form-acciones">
+        <button class="btn sec" id="recCancelar">Cancelar</button>
+        <button class="btn peligro" id="recBorrar" hidden>Eliminar</button>
+        <button class="btn" id="recGuardar">Guardar</button>
+      </div>
+    </div>
+
+    <div class="rec-lista" id="recLista"></div>
+  </section>
+
+  <!-- ============ VISTA PROGRESO ============ -->
+  <section id="view-progreso" role="tabpanel" aria-label="Progreso" hidden>
+    <div class="tiles">
+      <div class="tile"><div class="n" id="tRacha">0</div><div class="l">🔥 Racha</div></div>
+      <div class="tile"><div class="n" id="tMejor">0</div><div class="l">🏆 Mejor</div></div>
+      <div class="tile"><div class="n" id="tPeso">—</div><div class="l">⚖️ Peso kg</div></div>
+    </div>
+
+    <div class="seccion">
+      <h2>Mi peso</h2>
+      <p class="desc" id="pesoResumen">Registra tu peso para ver tu evolución.</p>
+      <div id="chartWrap" style="position:relative">
+        <div id="chartTip"></div>
+        <div id="chartPeso"></div>
+      </div>
+      <div class="peso-form">
+        <input type="number" id="inPeso" inputmode="decimal" step="0.1" min="30" max="300" placeholder="Peso de hoy (kg)" aria-label="Peso de hoy en kilogramos">
+        <button class="btn" id="btnPeso">Registrar</button>
+      </div>
+    </div>
+
+    <div class="seccion">
+      <h2>Fotos de progreso</h2>
+      <p class="desc">Una foto al mes vale más que la báscula. Se guardan solo en este dispositivo.</p>
+      <div class="fotos-grid" id="fotosGrid"></div>
+      <input type="file" id="inFoto" accept="image/*" capture="environment" hidden>
+    </div>
+
+    <div class="seccion">
+      <h2>Historial</h2>
+      <p class="desc">Últimos 14 días · 💊 = todos los medicamentos tomados. Un día cuenta para la racha con todos los medicamentos y al menos 80% del plan. Toca un día para abrirlo.</p>
+      <div id="histLista"></div>
+    </div>
+  </section>
+
+  <!-- ============ VISTA AJUSTES ============ -->
+  <section id="view-ajustes" role="tabpanel" aria-label="Ajustes" hidden>
+    <div class="seccion">
+      <h2>Apariencia</h2>
+      <p class="desc">Modo de color de la app.</p>
+      <div class="seg" role="group" aria-label="Tema">
+        <button data-tema="auto" aria-pressed="true">🌗 Auto</button>
+        <button data-tema="light" aria-pressed="false">☀️ Día</button>
+        <button data-tema="dark" aria-pressed="false">🌙 Noche</button>
+      </div>
+      <div class="acentos" role="group" aria-label="Color de la app">
+        <button class="sw-color" data-acento="verde" style="--sw:#A9DCC0" aria-label="Menta" aria-pressed="true"></button>
+        <button class="sw-color" data-acento="azul" style="--sw:#AECBEB" aria-label="Cielo" aria-pressed="false"></button>
+        <button class="sw-color" data-acento="indigo" style="--sw:#C3BCEC" aria-label="Lila" aria-pressed="false"></button>
+        <button class="sw-color" data-acento="frambuesa" style="--sw:#F2BCCB" aria-label="Rosa" aria-pressed="false"></button>
+        <button class="sw-color" data-acento="terracota" style="--sw:#F5C8A4" aria-label="Durazno" aria-pressed="false"></button>
+        <button class="sw-color" data-acento="turquesa" style="--sw:#A6DEDC" aria-label="Agua" aria-pressed="false"></button>
+        <label class="sw-color sw-custom" data-acento="custom" aria-label="Elegir cualquier color">
+          <input type="color" id="acentoCustom" value="#A9DCC0" aria-label="Selector de color libre">
+        </label>
+      </div>
+      <p class="acento-nombre" id="acentoNombre">Color: Menta</p>
+    </div>
+
+    <div class="seccion">
+      <h2>Sobre mí</h2>
+      <div class="campo">
+        <span class="et">Mi nombre</span>
+        <input type="text" id="setNombre" placeholder="Tu nombre" autocomplete="off">
+      </div>
+      <div class="campo">
+        <span class="et">Peso meta <small>para la línea en la gráfica</small></span>
+        <input type="number" id="setMeta" inputmode="decimal" step="0.1" placeholder="kg">
+      </div>
+    </div>
+
+    <div class="seccion">
+      <h2>Horarios de recordatorio</h2>
+      <p class="desc">Todo se calcula en hora de Colombia.</p>
+      <div id="listaHorarios"></div>
+      <div class="campo">
+        <span class="et">Notificaciones <small id="notifEstado">Desactivadas</small></span>
+        <span class="sw"><input type="checkbox" id="setNotif" role="switch" aria-label="Activar notificaciones"><span class="pista"></span><span class="bola"></span></span>
+      </div>
+      <p class="aviso">⚠️ Los avisos suenan mientras la app esté abierta (aunque sea en segundo plano). Para no depender de eso, te recomiendo crear también alarmas en el reloj del teléfono a estas mismas horas — especialmente para los medicamentos.</p>
+    </div>
+
+    <div class="seccion">
+      <h2>Mi dieta</h2>
+      <p class="desc">Cuando cambies de dieta, importa aquí el nuevo plan y toda la app se actualiza: bloques, opciones y horarios.</p>
+      <div class="campo">
+        <span class="et">Importar plan nuevo <small>archivo .json del plan</small></span>
+        <button class="btn sec" id="btnImportarPlan">Importar</button>
+      </div>
+      <div class="campo">
+        <span class="et">Exportar plan actual <small>respaldo de tu dieta actual</small></span>
+        <button class="btn sec" id="btnExportarPlan">Exportar</button>
+      </div>
+      <input type="file" id="inPlan" accept=".json,application/json" hidden>
+      <p class="aviso">💡 ¿Solo tienes el PDF de tu nutricionista? Los PDF escaneados no se pueden leer desde la app. Pásale el PDF a Claude en el chat y pídele el archivo del plan para importar — te genera este .json en un momento.</p>
+    </div>
+
+    <div class="seccion">
+      <h2>Mis datos</h2>
+      <div class="campo">
+        <span class="et">Exportar historial <small>archivo JSON para tu nutricionista o respaldo</small></span>
+        <button class="btn sec" id="btnExportar">Exportar</button>
+      </div>
+      <div class="campo">
+        <span class="et">Reiniciar las marcas de hoy <small>desmarca todo el día actual</small></span>
+        <button class="btn sec" id="btnReiniciarHoy">Reiniciar</button>
+      </div>
+      <div class="campo">
+        <span class="et">Borrar todos los datos <small>historial, pesos, recetas y ajustes</small></span>
+        <button class="btn peligro" id="btnBorrarTodo">Borrar</button>
+      </div>
+      <p class="aviso">🔒 Todo se guarda únicamente en este dispositivo (navegador). Nada se envía a ningún servidor. Si borras los datos del navegador, se pierde el historial — exporta de vez en cuando.</p>
+    </div>
+  </section>
+</div>
+
+<div id="toast" role="status"></div>
+
+<nav class="tabbar" aria-label="Navegación principal">
+  <div class="inner" role="tablist">
+    <button role="tab" aria-selected="true" data-view="hoy"><span class="ic">☀️</span>Hoy</button>
+    <button role="tab" aria-selected="false" data-view="recetas"><span class="ic">🧑‍🍳</span>Recetas</button>
+    <button role="tab" aria-selected="false" data-view="progreso"><span class="ic">📈</span>Progreso</button>
+    <button role="tab" aria-selected="false" data-view="ajustes"><span class="ic">⚙️</span>Ajustes</button>
+  </div>
+</nav>
+
+<div id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
+  <div class="caja-m">
+    <h3 id="modalTitulo"></h3>
+    <p id="modalTexto"></p>
+    <div class="acciones">
+      <button class="btn sec" id="modalNo">Cancelar</button>
+      <button class="btn" id="modalSi">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div id="recetaSheet" role="dialog" aria-modal="true" aria-labelledby="rsNombre">
+  <div class="hoja">
+    <div class="asa" aria-hidden="true"></div>
+    <img class="foto" id="rsFoto" alt="Foto de la receta" hidden>
+    <h3 id="rsNombre"></h3>
+    <p class="base-r" id="rsBase"></p>
+    <div class="sub-r" id="rsIngTitulo" hidden>Ingredientes</div>
+    <p class="tx-r" id="rsIng"></p>
+    <div class="sub-r" id="rsPrepTitulo" hidden>Preparación</div>
+    <p class="tx-r" id="rsPrep"></p>
+    <div class="acciones-r">
+      <button class="btn sec" id="rsEditar">✏️ Editar</button>
+      <button class="btn" id="rsElegir">Elegir</button>
+    </div>
+    <button class="btn sec" id="rsCerrar" style="width:100%; margin-top:10px">Cerrar</button>
+  </div>
+</div>
+
+<div id="visorFoto">
+  <img id="visorImg" alt="Foto de progreso">
+  <div class="fecha-f" id="visorFecha"></div>
+  <div class="acciones">
+    <button class="btn peligro" id="visorBorrar">Eliminar</button>
+    <button class="btn sec" id="visorCerrar">Cerrar</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ================================================================
+   MI PLAN VITAL v3 — seguimiento diario de alimentación y medicamentos
+   Calendario por día · plan importable · recetas propias · tema manual
+   Zona horaria fija: America/Bogota. Datos solo en este dispositivo.
+   ================================================================ */
+
+/* ---------- Plan semilla (editable importando un .json en Ajustes) ---------- */
+const PLAN_SEMILLA = [
+  {
+    id:'despertar', nombre:'Al despertar', emoji:'🌅',
+    fijos:[{id:'d-agua', em:'💧', lb:'Vaso de agua con limón'}],
+    meds:[], opciones:null, extra:null
+  },
+  {
+    id:'desayuno', nombre:'Desayuno', emoji:'🍳',
+    fijos:[
+      {id:'de-agua', em:'💧', lb:'Vaso pequeño de agua'},
+      {id:'de-prob', em:'✨', lb:'Probióticos Milenium'}
+    ],
+    meds:[{id:'de-bupropion', em:'💊', lb:'Bupropión'}],
+    opciones:[
+      {em:'🥪', lb:'Sánduche', dt:'2 panes integrales + 2 jamón + 1 queso + 2 cdas de aguacate'},
+      {em:'🥣', lb:'Avena con fresa', dt:'4 cdas de avena + 50 ml leche + fresa + 150 ml yogur griego + 1 cda de chía'},
+      {em:'🧇', lb:'Waffles proteicos', dt:'50 ml agua + 1 scoop de mezcla + 1 cda de crema de maní + fruta'},
+      {em:'🌯', lb:'Burrito', dt:'Tortilla + verduras al gusto + 100 g pollo + 1 lonchita de queso · alternar la tortilla con galletas saladas'}
+    ],
+    extra:{id:'de-tinto', em:'☕', lb:'1 tinto sin azúcar'}
+  },
+  {
+    id:'almuerzo', nombre:'Almuerzo + Omega 3', emoji:'🍽️',
+    fijos:[
+      {id:'al-agua', em:'💧', lb:'Vaso mediano de agua', dt:'250 ml'},
+      {id:'al-prob', em:'✨', lb:'Probióticos Milenium'},
+      {id:'al-omega', em:'🐟', lb:'Omega 3', omega:true}
+    ],
+    meds:[],
+    opciones:[
+      {em:'🍗', lb:'Pollo con arroz', dt:'120 g pollo + 80 g arroz + tomate al gusto'},
+      {em:'🥔', lb:'Papa criolla con pollo', dt:'108 g papa criolla asada + 120 g pollo + 2 cdas de guacamole'},
+      {em:'🥗', lb:'Sopa con ensalada', dt:'1 cucharón y medio de sopa + ensalada + ¼ de aguacate + 2 cdas de arroz'},
+      {em:'🍲', lb:'Cazuela', dt:'Libre'}
+    ],
+    extra:{id:'al-bebida', em:'🍹', lb:'Bebida', dt:'Soda con frutos rojos · infusión fría Tosh · agua de limón · infusión de menta o hierbabuena'},
+    nota:'<b>Proteína:</b> 4–5 veces carnes blancas y 2–3 veces carnes rojas por semana · cada plato: 2 harinas + 2 grasas + 1½ verduras + 1 porción de proteína + agua Omega American Health'
+  },
+  {
+    id:'mediatarde', nombre:'Media tarde', emoji:'🥭',
+    fijos:[], meds:[],
+    opciones:[
+      {em:'🥭', lb:'Mango biche con tajín', dt:'112 g, 1 unidad pequeña'},
+      {em:'🍮', lb:'Yogur natural con gelatina', dt:'Gelatina 140 g + yogur natural fat free 100 ml'},
+      {em:'🫐', lb:'Arándanos', dt:'93 g'},
+      {em:'🥜', lb:'Marañones, almendras o nueces de Brasil', dt:'30 g · 3 cdas soperas colmadas'}
+    ],
+    extra:null
+  },
+  {
+    id:'cena', nombre:'Cena', emoji:'🌙',
+    fijos:[
+      {id:'ce-agua', em:'💧', lb:'Vaso mediano de agua', dt:'250 ml'},
+      {id:'ce-prob', em:'✨', lb:'Probióticos Milenium'}
+    ],
+    meds:[
+      {id:'ce-pregabalina', em:'💊', lb:'Pregabalina'},
+      {id:'ce-lamotrigina', em:'💊', lb:'Lamotrigina'},
+      {id:'ce-rosuvastatina', em:'💊', lb:'Rosuvastatina'}
+    ],
+    opciones:[
+      {em:'🥗', lb:'Ensalada de atún', dt:'Verduras al gusto'},
+      {em:'🍅', lb:'Crema de tomate con pollo', dt:'2 cucharones (100 ml) + pollo + tomate + 1 cda de aceite de oliva'},
+      {em:'🥤', lb:'Batido de proteína', dt:'Scoop de proteína + fruta + 200 ml de leche de avena'},
+      {em:'🥦', lb:'Verduras con proteína', dt:'Al gusto'}
+    ],
+    extra:{id:'ce-infusion', em:'🍵', lb:'Infusión de frutos amarillos'}
+  }
+];
+const COLORES = ['--b1','--b2','--b3','--b4','--b5'];
+const HORAS_DEF = {despertar:'05:00', desayuno:'10:00', almuerzo:'12:30', mediatarde:'16:00', cena:'19:00'};
+
+const FRASES = [
+  'Cada casilla que marcas es una promesa que te cumples.',
+  'No tienes que ser perfecto hoy. Solo constante.',
+  'Tu cuerpo escucha todo lo que haces por él.',
+  'Un día a la vez. Un vaso de agua a la vez.',
+  'La disciplina pesa gramos; el arrepentimiento pesa kilos.',
+  'Hoy es otra oportunidad de cuidarte.',
+  'Lo que haces todos los días importa más que lo que haces de vez en cuando.',
+  'No estás perdiendo peso: estás ganando vida.',
+  'El progreso no siempre se ve en el espejo. A veces se ve en la constancia.',
+  'Tus medicamentos a tiempo son un acto de amor propio.',
+  'Pequeños pasos todos los días llevan lejos.',
+  'La versión de ti de diciembre te va a agradecer lo de hoy.',
+  'Comer bien no es castigo: es cuidarte con hechos.',
+  'La racha se construye un día a la vez.',
+  'Si hoy fallas en algo, mañana vuelves a empezar. Sin culpa.',
+  'Beber agua también cuenta como quererte.',
+  'Tu meta no tiene afán, pero sí necesita que no pares.',
+  'Cada comida es una nueva decisión. Elige a tu favor.',
+  'No compitas con nadie: compite con tu excusa.',
+  'Los hábitos que hoy siembras son la salud que mañana cosechas.',
+  'Estás más cerca que ayer.',
+  'El cuerpo logra lo que la mente cree.',
+  'Cuidarte no es egoísmo: es responsabilidad contigo.',
+  'La constancia convierte lo difícil en costumbre.',
+  'Que tu única comparación sea con quien eras ayer.',
+  'Hoy también cuenta. Todo suma.',
+  'Un antojo dura minutos; tu orgullo por resistirlo dura todo el día.',
+  'No es una dieta: es tu nueva forma de vivir.',
+  'Confía en el proceso, incluso los días lentos.',
+  'Tu esfuerzo de hoy es invisible… hasta que de repente se nota.',
+  'Descansar también es parte del plan.',
+  'Ya empezaste. Eso te pone por delante de la duda.',
+  'Marca la casilla. Gana el día. Repite.',
+  'La báscula mide el peso, no tu valor.',
+  'Sé tan constante contigo como quisieras que la vida lo fuera.',
+  'Vas bien. Sigue.'
+];
+
+const FELICITACIONES = [
+  '¡Todo marcado! Hoy te cuidaste de verdad.',
+  'Día impecable. Tu constancia se nota.',
+  '100% cumplido. Así se construye una racha.',
+  'Plan completo y medicamentos al día. Enorme.',
+  'Otro ladrillo en tu nueva versión. ¡Bravo!'
+];
+
+/* ---------- Estado ---------- */
+const LS_KEY = 'planvital.v1';
+const DEFAULTS = {
+  settings:{ times:{...HORAS_DEF}, notif:false, meta:null, nombre:'', tema:'auto', acento:'verde', acentoHex:null },
+  plan:null,   // null = usa PLAN_SEMILLA
+  recetas:[],  // [{id, nombre, bloque, opcion, ing, prep, origen?}]
+  planSembrado:false, // ya se crearon recetas a partir de las opciones del plan
+  days:{},     // 'YYYY-MM-DD' -> {checks:{}, opts:{}, rec:{bloqueId:recetaId}}
+  pesos:[],    // [{d, kg}]
+  notified:{}
+};
+let S = load();
+function load(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(!raw) return structuredClone(DEFAULTS);
+    const d = JSON.parse(raw);
+    return {
+      settings:{...structuredClone(DEFAULTS.settings), ...(d.settings||{}), times:{...HORAS_DEF, ...((d.settings||{}).times||{})}},
+      plan:d.plan||null, recetas:d.recetas||[], planSembrado:!!d.planSembrado,
+      days:d.days||{}, pesos:d.pesos||[], notified:d.notified||{}
+    };
+  }catch(e){ return structuredClone(DEFAULTS); }
+}
+function save(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(S)); }catch(e){} }
+function plan(){ return S.plan || PLAN_SEMILLA; }
+function colorDe(i){ return COLORES[i % COLORES.length]; }
+function horaDe(bId){ return S.settings.times[bId] || HORAS_DEF[bId] || '12:00'; }
+
+/* ---------- Utilidades ---------- */
+function esc(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escNota(s){ // permite solo <b> en las notas del plan
+  return esc(s).replace(/&lt;(\/?)b&gt;/g, '<$1b>');
+}
+
+/* ---------- Fecha/hora en Bogotá ---------- */
+function bogota(){
+  const parts = new Intl.DateTimeFormat('en-CA', {timeZone:'America/Bogota', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hourCycle:'h23'}).formatToParts(new Date());
+  const g = t => parts.find(p=>p.type===t).value;
+  return {date:`${g('year')}-${g('month')}-${g('day')}`, hm:`${g('hour')}:${g('minute')}`};
+}
+function fechaBonita(dateStr){
+  const d = new Date(dateStr+'T12:00:00-05:00');
+  return d.toLocaleDateString('es-CO', {timeZone:'America/Bogota', weekday:'long', day:'numeric', month:'long'});
+}
+function fechaCorta(dateStr){
+  const d = new Date(dateStr+'T12:00:00-05:00');
+  return d.toLocaleDateString('es-CO', {timeZone:'America/Bogota', weekday:'short', day:'numeric', month:'short'}).replace(/\./g,'');
+}
+function diasAtras(dateStr, n){
+  const d = new Date(dateStr+'T12:00:00Z');
+  d.setUTCDate(d.getUTCDate()-n);
+  return d.toISOString().slice(0,10);
+}
+function hora12(hm){
+  const [h,m] = hm.split(':').map(Number);
+  const ap = h < 12 ? 'a. m.' : 'p. m.';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${String(m).padStart(2,'0')} ${ap}`;
+}
+
+/* ---------- Día visible (calendario) ---------- */
+let viewDate = bogota().date;
+
+/* ---------- Cálculo de puntos ---------- */
+function dayData(dateStr){
+  if(!S.days[dateStr]) S.days[dateStr] = {checks:{}, opts:{}, rec:{}};
+  if(!S.days[dateStr].rec) S.days[dateStr].rec = {};
+  return S.days[dateStr];
+}
+function statsDe(dateStr){
+  const d = S.days[dateStr] || {checks:{}, opts:{}};
+  let total=0, hechos=0, medsT=0, medsH=0;
+  for(const b of plan()){
+    for(const f of b.fijos){ total++; if(d.checks[f.id]) hechos++; }
+    for(const m of b.meds){ total++; medsT++; if(d.checks[m.id]){ hechos++; medsH++; } }
+    if(b.opciones && b.opciones.length){ total++; if(d.opts[b.id]!=null) hechos++; }
+  }
+  const pct = total ? Math.round(hechos/total*100) : 0;
+  return {total, hechos, medsT, medsH, pct, cumplido: medsH===medsT && pct>=80, perfecto: total>0 && hechos===total};
+}
+function tieneRegistros(dateStr){
+  const d = S.days[dateStr];
+  return !!(d && (Object.keys(d.checks).some(k=>d.checks[k]) || Object.keys(d.opts).length>0));
+}
+function rachas(){
+  const hoy = bogota().date;
+  let actual = 0;
+  let cursor = statsDe(hoy).cumplido ? hoy : diasAtras(hoy,1);
+  while(statsDe(cursor).cumplido){ actual++; cursor = diasAtras(cursor,1); }
+  const fechas = Object.keys(S.days).filter(f=>statsDe(f).cumplido).sort();
+  let mejor=0, run=0, prev=null;
+  for(const f of fechas){
+    run = (prev && diasAtras(f,1)===prev) ? run+1 : 1;
+    if(run>mejor) mejor=run;
+    prev=f;
+  }
+  return {actual, mejor:Math.max(mejor, actual)};
+}
+
+/* ---------- Frase del día ---------- */
+function fraseDelDia(dateStr){
+  const n = Math.floor(new Date(dateStr+'T12:00:00Z').getTime()/86400000);
+  return FRASES[n % FRASES.length];
+}
+
+/* ---------- Tema ---------- */
+function aplicarTema(){
+  const t = S.settings.tema || 'auto';
+  if(t==='auto') delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = t;
+  document.querySelectorAll('[data-tema]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tema===t)));
+}
+document.querySelectorAll('[data-tema]').forEach(b => {
+  b.addEventListener('click', () => { S.settings.tema = b.dataset.tema; save(); aplicarTema(); });
+});
+
+/* ---------- Color de la app (acento) ---------- */
+const ACENTOS = [
+  {id:'verde',     nombre:'Menta',   hex:'#A9DCC0'},
+  {id:'azul',      nombre:'Cielo',   hex:'#AECBEB'},
+  {id:'indigo',    nombre:'Lila',    hex:'#C3BCEC'},
+  {id:'frambuesa', nombre:'Rosa',    hex:'#F2BCCB'},
+  {id:'terracota', nombre:'Durazno', hex:'#F5C8A4'},
+  {id:'turquesa',  nombre:'Agua',    hex:'#A6DEDC'}
+];
+/* Texto oscuro sobre colores claros, blanco sobre colores fuertes */
+function tintaPara(hex){
+  const n = parseInt(hex.slice(1), 16);
+  const lin = c => { c/=255; return c<=0.04045 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4); };
+  const lum = 0.2126*lin(n>>16 & 255) + 0.7152*lin(n>>8 & 255) + 0.0722*lin(n & 255);
+  return lum > 0.35 ? '#2A322C' : '#FFFFFF';
+}
+/* Variante intensa del color elegido: mismo tono, luminosidad fija */
+function hexAHsl(hex){
+  const n = parseInt(hex.slice(1), 16);
+  const r = (n>>16 & 255)/255, g = (n>>8 & 255)/255, b = (n & 255)/255;
+  const max = Math.max(r,g,b), min = Math.min(r,g,b), l = (max+min)/2;
+  if(max === min) return [0, 0, l];
+  const d = max - min;
+  const s = l > 0.5 ? d/(2-max-min) : d/(max+min);
+  let h;
+  if(max === r) h = ((g-b)/d + (g<b ? 6 : 0));
+  else if(max === g) h = (b-r)/d + 2;
+  else h = (r-g)/d + 4;
+  return [h/6, s, l];
+}
+function hslAHex(h, s, l){
+  const k = n => (n + h*12) % 12;
+  const a = s * Math.min(l, 1-l);
+  const f = n => { const c = l - a * Math.max(-1, Math.min(k(n)-3, Math.min(9-k(n), 1))); return Math.round(c*255).toString(16).padStart(2,'0'); };
+  return '#' + f(0) + f(8) + f(4);
+}
+function variante(hex, luz, satMin){
+  const [h, s, _l] = hexAHsl(hex);
+  return hslAHex(h, Math.max(s, satMin), luz);
+}
+function acentoActual(){
+  if(S.settings.acento === 'custom' && /^#[0-9a-fA-F]{6}$/.test(S.settings.acentoHex||''))
+    return {id:'custom', nombre:'Personalizado ' + S.settings.acentoHex.toUpperCase(), hex:S.settings.acentoHex};
+  return ACENTOS.find(x => x.id === (S.settings.acento||'verde')) || ACENTOS[0];
+}
+function aplicarAcento(){
+  const a = acentoActual();
+  const tinta = tintaPara(a.hex);
+  const fuerteClaro = variante(a.hex, 0.33, 0.30);  // para leer sobre fondos claros
+  const fuerteOscuro = variante(a.hex, 0.72, 0.28); // para leer sobre fondos oscuros
+  /* Timeline en subtonos del color elegido: se profundiza del amanecer a la noche,
+     con un matiz apenas más cálido en la mañana y más frío en la noche */
+  const [h, s] = hexAHsl(a.hex);
+  const sat = s < 0.05 ? s : Math.max(s, 0.28); // los grises se quedan grises
+  const matices = [0.045, 0.02, 0, -0.02, -0.045];
+  const LUZ_DIA = [0.58, 0.51, 0.44, 0.37, 0.30];
+  const LUZ_NOCHE = [0.56, 0.62, 0.68, 0.74, 0.80];
+  const tonos = luces => matices.map((m, i) => hslAHex((h + m + 1) % 1, sat, luces[i]));
+  const bDia = tonos(LUZ_DIA), bNoche = tonos(LUZ_NOCHE);
+  const vars = b => b.map((hex, i) => `--b${i+1}:${hex}`).join('; ');
+  let el = document.getElementById('acentoStyle');
+  if(!el){
+    el = document.createElement('style');
+    el.id = 'acentoStyle';
+    // al final del body para ganar en orden de cascada al estilo principal
+    (document.body || document.documentElement).appendChild(el);
+  }
+  el.textContent = `
+    :root{--accent:${a.hex}; --accent-ink:${tinta}; --accent-strong:${fuerteClaro}; ${vars(bDia)}}
+    @media (prefers-color-scheme: dark){ :root{--accent-strong:${fuerteOscuro}; ${vars(bNoche)}} }
+    :root[data-theme="dark"]{--accent-strong:${fuerteOscuro}; ${vars(bNoche)}}
+    :root[data-theme="light"]{--accent-strong:${fuerteClaro}; ${vars(bDia)}}`;
+  document.querySelectorAll('[data-acento]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.acento===a.id)));
+  const nom = document.getElementById('acentoNombre');
+  if(nom) nom.textContent = 'Color: ' + a.nombre;
+  const picker = document.getElementById('acentoCustom');
+  if(picker) picker.value = a.hex;
+}
+document.querySelectorAll('button[data-acento]').forEach(b => {
+  b.addEventListener('click', () => { S.settings.acento = b.dataset.acento; save(); aplicarAcento(); });
+});
+const pickerAcento = document.getElementById('acentoCustom');
+if(pickerAcento){
+  pickerAcento.addEventListener('input', e => {
+    S.settings.acento = 'custom';
+    S.settings.acentoHex = e.target.value;
+    aplicarAcento();
+  });
+  pickerAcento.addEventListener('change', () => save());
+}
+
+/* ---------- Render: cabecera ---------- */
+function renderCabecera(){
+  const {date, hm} = bogota();
+  document.getElementById('fechaHoy').textContent = fechaBonita(date);
+  const h = +hm.split(':')[0];
+  const saludo = h<12 ? 'Buenos días' : h<18 ? 'Buenas tardes' : 'Buenas noches';
+  const nom = S.settings.nombre ? `, ${S.settings.nombre}` : '';
+  document.getElementById('saludo').textContent = `${saludo}${nom} 🌱`;
+  document.getElementById('fraseDia').textContent = '“' + fraseDelDia(date) + '”';
+}
+
+/* ---------- Navegador de días ---------- */
+function renderDiaNav(){
+  const hoy = bogota().date;
+  const esHoy = viewDate === hoy;
+  document.getElementById('diaLabel').textContent = esHoy ? `Hoy · ${fechaCorta(viewDate)}` : fechaBonita(viewDate);
+  const inp = document.getElementById('diaInput');
+  inp.value = viewDate; inp.max = hoy;
+  document.getElementById('diaNext').disabled = esHoy;
+  document.getElementById('btnVolverHoy').classList.toggle('on', !esHoy);
+  document.getElementById('avisoPasado').classList.toggle('on', !esHoy);
+  document.getElementById('resumenTitulo').textContent = esHoy ? 'Progreso de hoy' : 'Progreso del día';
+}
+function irADia(dateStr){
+  const hoy = bogota().date;
+  if(dateStr > hoy) dateStr = hoy;
+  viewDate = dateStr;
+  renderDiaNav();
+  renderTimeline();
+}
+document.getElementById('diaPrev').addEventListener('click', ()=> irADia(diasAtras(viewDate,1)));
+document.getElementById('diaNext').addEventListener('click', ()=> irADia(diasAtras(viewDate,-1)));
+document.getElementById('btnVolverHoy').addEventListener('click', ()=> irADia(bogota().date));
+document.getElementById('diaInput').addEventListener('change', e => { if(e.target.value) irADia(e.target.value); });
+
+/* ---------- Render: timeline ---------- */
+function itemHTML(it, tipo, bloqueId, checked){
+  const clase = tipo==='med' ? 'item med' : it.omega ? 'item omega' : 'item';
+  const eyebrow = tipo==='med' ? '<span class="eyebrow">Medicamento</span>' : it.omega ? '<span class="eyebrow">Suplemento diario</span>' : '';
+  return `<label class="${clase}">
+    <input type="checkbox" data-item="${esc(it.id)}" data-bloque="${esc(bloqueId)}" ${checked?'checked':''}>
+    <span class="caja" aria-hidden="true"></span>
+    <span class="em" aria-hidden="true">${esc(it.em||'•')}</span>
+    <span class="tx">${eyebrow}<span class="lb">${esc(it.lb)}</span>${it.dt?`<span class="dt">${esc(it.dt)}</span>`:''}</span>
+  </label>`;
+}
+function renderTimeline(){
+  const d = dayData(viewDate);
+  const cont = document.getElementById('timeline');
+  const P = plan();
+  let html = '';
+  P.forEach((b, i) => {
+    const next = P[i+1];
+    const hm = horaDe(b.id);
+    let inner = '';
+    for(const f of b.fijos) inner += itemHTML(f, f.omega?'omega':'fijo', b.id, !!d.checks[f.id]);
+    for(const m of b.meds) inner += itemHTML(m, 'med', b.id, !!d.checks[m.id]);
+    if(b.nota) inner += `<div class="nota">${escNota(b.nota)}</div>`;
+    if(b.opciones && b.opciones.length){
+      inner += `<fieldset><legend class="grupo-titulo">Elige 1 opción</legend>`;
+      b.opciones.forEach((o, oi) => {
+        inner += `<label class="item">
+          <input type="radio" name="opt-${esc(b.id)}" data-opt="${oi}" data-bloque="${esc(b.id)}" ${d.opts[b.id]===oi?'checked':''}>
+          <span class="caja" aria-hidden="true"></span>
+          <span class="em" aria-hidden="true">${esc(o.em||'•')}</span>
+          <span class="tx"><span class="lb">${esc(o.lb)}</span>${o.dt?`<span class="dt">${esc(o.dt)}</span>`:''}</span>
+        </label>`;
+      });
+      inner += `</fieldset>`;
+      // recetas propias de este bloque
+      const recs = S.recetas.filter(r => r.bloque === b.id);
+      if(recs.length){
+        let chips = '';
+        for(const r of recs){
+          const activa = d.rec[b.id] === r.id;
+          chips += `<button class="rec-chip" data-receta="${r.id}" data-bloque="${esc(b.id)}" aria-pressed="${activa}">🧑‍🍳 ${esc(r.nombre)}</button>`;
+        }
+        inner += `<div class="rec-dia"><div class="t">Mi receta de este día</div><div class="rec-chips">${chips}</div></div>`;
+      }
+    }
+    if(b.extra){
+      inner += `<div class="extra-titulo">Extra · opcional</div>` + itemHTML(b.extra, 'extra', b.id, !!d.checks[b.extra.id]);
+    }
+    html += `<article class="bloque" id="bloque-${esc(b.id)}" style="--bc:var(${colorDe(i)}); --bc-next:var(${next?colorDe(i+1):colorDe(i)})">
+      <span class="punto" aria-hidden="true"></span>
+      <div class="b-cab">
+        <span class="b-hora" data-hora="${esc(b.id)}">${hora12(hm)}</span>
+        <span class="b-nombre">${esc(b.emoji||'')} ${esc(b.nombre)}</span>
+        <span class="chip-ahora">Ahora</span>
+        ${b.opciones && b.opciones.length ? `<button class="b-foto" data-fotocomida="${esc(b.id)}" aria-label="Añadir foto de ${esc(b.nombre)}" title="Añadir foto de lo que comí">📷</button>` : ''}
+      </div>
+      <div class="b-card">${inner}<div class="fotos-comida" data-fotoscomida="${esc(b.id)}" hidden></div></div>
+    </article>`;
+  });
+  cont.innerHTML = html;
+  actualizarDerivados();
+  marcarBloqueActual();
+  pintarFotosComidas();
+}
+
+/* Conteo por bloque, anillo, chips, banner */
+function actualizarDerivados(){
+  const d = dayData(viewDate);
+  const st = statsDe(viewDate);
+  plan().forEach(b => {
+    let t=0, h=0;
+    for(const f of b.fijos){ t++; if(d.checks[f.id]) h++; }
+    for(const m of b.meds){ t++; if(d.checks[m.id]) h++; }
+    if(b.opciones && b.opciones.length){ t++; if(d.opts[b.id]!=null) h++; }
+    const art = document.getElementById(`bloque-${b.id}`);
+    if(art) art.classList.toggle('hecho', t>0 && h===t);
+  });
+  const C = 2*Math.PI*36;
+  document.getElementById('anilloVal').style.strokeDashoffset = String(C * (1 - st.hechos/Math.max(st.total,1)));
+  document.getElementById('anilloPct').textContent = st.pct + '%';
+  document.getElementById('resumenSub').textContent = `${st.hechos} de ${st.total} puntos del plan`;
+  const r = rachas();
+  document.getElementById('chipRacha').textContent = `🔥 ${r.actual} ${r.actual===1?'día':'días'}`;
+  const chipM = document.getElementById('chipMeds');
+  chipM.textContent = `💊 ${st.medsH}/${st.medsT}`;
+  chipM.classList.toggle('ok', st.medsT>0 && st.medsH===st.medsT);
+  const banner = document.getElementById('bannerFiesta');
+  if(st.perfecto){
+    if(!banner.classList.contains('on')){
+      document.getElementById('bannerFrase').textContent = FELICITACIONES[Math.floor(Math.random()*FELICITACIONES.length)];
+      banner.classList.add('on');
+    }
+  } else banner.classList.remove('on');
+}
+
+/* Bloque actual según hora de Bogotá — solo al ver el día de hoy */
+function marcarBloqueActual(){
+  const {date, hm} = bogota();
+  const esHoy = viewDate === date;
+  const orden = plan().map(b => ({id:b.id, t:horaDe(b.id)})).sort((a,b)=>a.t.localeCompare(b.t));
+  let actual = orden.length ? orden[0].id : null;
+  for(const o of orden){ if(o.t <= hm) actual = o.id; }
+  plan().forEach(b => {
+    document.getElementById(`bloque-${b.id}`)?.classList.toggle('ahora', esHoy && b.id===actual);
+  });
+}
+
+/* ---------- Interacción: marcar casillas y recetas ---------- */
+document.getElementById('timeline').addEventListener('change', e => {
+  const inp = e.target;
+  const d = dayData(viewDate);
+  if(inp.dataset.item){
+    d.checks[inp.dataset.item] = inp.checked;
+    if(inp.checked && inp.closest('.item').classList.contains('med')) toast('💊 Medicamento registrado');
+  } else if(inp.dataset.opt != null){
+    d.opts[inp.dataset.bloque] = +inp.dataset.opt;
+  }
+  save();
+  actualizarDerivados();
+});
+document.getElementById('timeline').addEventListener('click', e => {
+  const vf = e.target.closest('[data-verfoto]');
+  if(vf){ verFotoComida(vf.dataset.verfoto); return; }
+  const bf = e.target.closest('[data-fotocomida]');
+  if(bf){ fotoComidaBloque = bf.dataset.fotocomida; document.getElementById('inFotoComida').click(); return; }
+  const chip = e.target.closest('.rec-chip');
+  if(!chip) return;
+  abrirRecetaSheet(+chip.dataset.receta, chip.dataset.bloque);
+});
+
+/* ---------- Fotos de lo que comí (libres: las que quieras por comida y día) ---------- */
+let fotoComidaBloque = null;
+async function pintarFotosComidas(){
+  const fecha = viewDate;
+  const todas = await storeAll('comidafotos');
+  if(fecha !== viewDate) return; // el usuario cambió de día mientras cargaba
+  const delDia = todas.filter(f => f.d === fecha);
+  for(const b of plan()){
+    const cont = document.querySelector(`[data-fotoscomida="${CSS.escape(b.id)}"]`);
+    if(!cont) continue;
+    const fotos = delDia.filter(f => f.bloque === b.id);
+    if(!fotos.length){ cont.hidden = true; cont.innerHTML = ''; continue; }
+    cont.hidden = false;
+    cont.innerHTML = fotos.map(f =>
+      `<button class="fc-thumb" data-verfoto="${f.id}" aria-label="Ver foto de ${esc(b.nombre)}"><img src="${f.data}" alt=""></button>`
+    ).join('');
+  }
+}
+async function verFotoComida(fid){
+  const todas = await storeAll('comidafotos');
+  const f = todas.find(x => String(x.id) === String(fid));
+  if(!f) return;
+  const b = plan().find(x => x.id === f.bloque);
+  document.getElementById('visorImg').src = f.data;
+  document.getElementById('visorFecha').textContent = `${b ? b.nombre + ' · ' : ''}${fechaBonita(f.d)}`;
+  document.getElementById('visorFoto').classList.add('on');
+  document.getElementById('visorBorrar').onclick = () => {
+    confirmar('¿Eliminar foto?', 'Se eliminará esta foto de tu comida.', async () => {
+      await storeDel('comidafotos', f.id);
+      document.getElementById('visorFoto').classList.remove('on');
+      pintarFotosComidas();
+      toast('Foto eliminada');
+    });
+  };
+}
+document.getElementById('inFotoComida').addEventListener('change', e => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if(!file || !fotoComidaBloque) return;
+  const bid = fotoComidaBloque;
+  fotoComidaBloque = null;
+  const fecha = viewDate;
+  comprimirImagen(file, data => {
+    storePut('comidafotos', {id:Date.now(), d:fecha, bloque:bid, data}).then(() => {
+      if(fecha === viewDate) pintarFotosComidas();
+      toast('📸 Foto de tu comida guardada');
+    });
+  });
+});
+
+/* ---------- Hoja de receta (al tocar un chip) ---------- */
+let sheetActual = null; // {rid, bid}
+function syncChipsBloque(bid){
+  const d = dayData(viewDate);
+  document.querySelectorAll(`.rec-chip[data-bloque="${CSS.escape(bid)}"]`).forEach(c =>
+    c.setAttribute('aria-pressed', String(+c.dataset.receta === d.rec[bid])));
+}
+async function abrirRecetaSheet(rid, bid){
+  const r = S.recetas.find(x => x.id === rid);
+  if(!r) return;
+  sheetActual = {rid, bid};
+  const b = plan().find(x => x.id === r.bloque);
+  document.getElementById('rsNombre').textContent = r.nombre;
+  document.getElementById('rsBase').textContent =
+    r.origen==='plan' ? 'Opción de tu plan' :
+    (b && r.opcion!=null && b.opciones && b.opciones[r.opcion]) ? 'Basada en: ' + b.opciones[r.opcion].lb : 'Receta libre';
+  const ing = document.getElementById('rsIng'), prep = document.getElementById('rsPrep');
+  ing.textContent = r.ing || ''; prep.textContent = r.prep || '';
+  document.getElementById('rsIngTitulo').hidden = !r.ing;
+  document.getElementById('rsPrepTitulo').hidden = !r.prep;
+  const d = dayData(viewDate);
+  document.getElementById('rsElegir').textContent = d.rec[bid]===rid ? '✕ Quitar de este día' : '✓ Elegir para este día';
+  const img = document.getElementById('rsFoto');
+  img.hidden = true;
+  document.getElementById('recetaSheet').classList.add('on');
+  const foto = await recFotoGet(rid);
+  if(foto && sheetActual && sheetActual.rid===rid){ img.src = foto.data; img.hidden = false; }
+}
+function cerrarRecetaSheet(){ document.getElementById('recetaSheet').classList.remove('on'); sheetActual = null; }
+document.getElementById('rsCerrar').addEventListener('click', cerrarRecetaSheet);
+document.getElementById('recetaSheet').addEventListener('click', e => { if(e.target.id==='recetaSheet') cerrarRecetaSheet(); });
+document.getElementById('rsElegir').addEventListener('click', () => {
+  if(!sheetActual) return;
+  const {rid, bid} = sheetActual;
+  const d = dayData(viewDate);
+  if(d.rec[bid] === rid){ delete d.rec[bid]; toast('Receta quitada'); }
+  else { d.rec[bid] = rid; toast('🧑‍🍳 Receta elegida'); }
+  save();
+  syncChipsBloque(bid);
+  cerrarRecetaSheet();
+});
+document.getElementById('rsEditar').addEventListener('click', () => {
+  if(!sheetActual) return;
+  const rid = sheetActual.rid;
+  cerrarRecetaSheet();
+  irAVista('recetas');
+  abrirFormReceta(rid);
+});
+
+/* ---------- Vistas / tabs ---------- */
+const VISTAS = ['hoy','recetas','progreso','ajustes'];
+document.querySelectorAll('nav.tabbar [role=tab]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('nav.tabbar [role=tab]').forEach(b => b.setAttribute('aria-selected', String(b===btn)));
+    for(const v of VISTAS) document.getElementById('view-'+v).hidden = v!==btn.dataset.view;
+    if(btn.dataset.view==='recetas') renderRecetas();
+    if(btn.dataset.view==='progreso') renderProgreso();
+    if(btn.dataset.view==='ajustes') renderAjustes();
+    window.scrollTo({top:0});
+  });
+});
+function irAVista(v){ document.querySelector(`nav.tabbar [data-view="${v}"]`).click(); }
+
+/* ---------- Toast y modal ---------- */
+let toastTimer;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('on'), 2200);
+}
+let modalCb = null;
+function confirmar(titulo, texto, cb){
+  document.getElementById('modalTitulo').textContent = titulo;
+  document.getElementById('modalTexto').textContent = texto;
+  modalCb = cb;
+  document.getElementById('modal').classList.add('on');
+}
+document.getElementById('modalNo').addEventListener('click', ()=>{ modalCb=null; document.getElementById('modal').classList.remove('on'); });
+document.getElementById('modalSi').addEventListener('click', ()=>{ const cb=modalCb; modalCb=null; document.getElementById('modal').classList.remove('on'); if(cb) cb(); });
+
+/* ---------- RECETAS ---------- */
+let recEditando = null; // id de receta en edición, o null
+let recetaIdSeq = Date.now();
+function nuevaRecetaId(){ return recetaIdSeq++; }
+/* Convierte las opciones del plan vigente en recetas editables (sin duplicar) */
+function sembrarRecetasDelPlan(){
+  let n = 0;
+  plan().forEach(b => {
+    (b.opciones||[]).forEach((o, i) => {
+      const ya = S.recetas.some(r => r.bloque===b.id && r.nombre.trim().toLowerCase()===o.lb.trim().toLowerCase());
+      if(!ya){
+        S.recetas.push({id:nuevaRecetaId(), nombre:o.lb, bloque:b.id, opcion:i, ing:o.dt||'', prep:'', origen:'plan'});
+        n++;
+      }
+    });
+  });
+  S.planSembrado = true;
+  save();
+  return n;
+}
+function nombreBloque(bid){
+  const b = plan().find(x=>x.id===bid);
+  return b ? `${b.emoji||''} ${b.nombre}`.trim() : bid;
+}
+async function renderRecetas(){
+  const cont = document.getElementById('recLista');
+  if(!S.recetas.length){
+    cont.innerHTML = `<div class="rec-vacio">Aún no tienes recetas.<br>Crea la primera con el botón de arriba 👆</div>`;
+    return;
+  }
+  const fotos = await recFotosMap();
+  const cardHTML = (r, b) => {
+    let baseLb;
+    if(r.origen==='plan') baseLb = 'Opción de tu plan';
+    else if(b && r.opcion!=null && b.opciones && b.opciones[r.opcion]) baseLb = `Basada en: ${b.opciones[r.opcion].lb}`;
+    else baseLb = 'Receta libre';
+    const foto = fotos.get(r.id);
+    return `<div class="rec-card" data-editar="${r.id}" role="button" tabindex="0">
+      ${foto ? `<img class="thumb" src="${foto}" alt="">` : ''}
+      <div class="cuerpo">
+        <div class="n">${esc(r.nombre)}</div>
+        <div class="base">${esc(baseLb)}</div>
+        ${r.ing ? `<div class="ing">${esc(r.ing)}</div>` : ''}
+      </div>
+    </div>`;
+  };
+  const P = plan();
+  let html = '';
+  P.forEach((b, i) => {
+    const recs = S.recetas.filter(r=>r.bloque===b.id);
+    if(!recs.length) return;
+    html += `<div class="rec-bloque-t" style="--bc:var(${colorDe(i)})"><span class="dot"></span>${esc(b.emoji||'')} ${esc(b.nombre)}</div>`;
+    for(const r of recs) html += cardHTML(r, b);
+  });
+  const huerfanas = S.recetas.filter(r => !P.some(b=>b.id===r.bloque));
+  if(huerfanas.length){
+    html += `<div class="rec-bloque-t"><span class="dot" style="background:var(--ink-3)"></span>De un plan anterior</div>`;
+    for(const r of huerfanas) html += cardHTML(r, null);
+  }
+  cont.innerHTML = html;
+  cont.querySelectorAll('[data-editar]').forEach(card => {
+    const abrir = () => abrirFormReceta(+card.dataset.editar);
+    card.addEventListener('click', abrir);
+    card.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' '){ e.preventDefault(); abrir(); } });
+  });
+}
+function poblarSelectBloques(){
+  const sel = document.getElementById('recBloque');
+  sel.innerHTML = plan().filter(b=>b.opciones && b.opciones.length)
+    .map(b=>`<option value="${esc(b.id)}">${esc(b.emoji||'')} ${esc(b.nombre)}</option>`).join('');
+  poblarSelectOpciones();
+}
+function poblarSelectOpciones(){
+  const bid = document.getElementById('recBloque').value;
+  const b = plan().find(x=>x.id===bid);
+  const sel = document.getElementById('recOpcion');
+  let ops = `<option value="">Receta libre (sin opción base)</option>`;
+  if(b && b.opciones) b.opciones.forEach((o,i)=>{ ops += `<option value="${i}">${esc(o.lb)}</option>`; });
+  sel.innerHTML = ops;
+}
+document.getElementById('recBloque').addEventListener('change', poblarSelectOpciones);
+
+/* Foto de ilustración de la receta */
+let recFotoPend; // undefined = sin cambios, string = foto nueva, null = quitar
+function renderFotoZona(dataUrl){
+  const z = document.getElementById('recFotoZona');
+  if(dataUrl){
+    z.innerHTML = `<img src="${dataUrl}" alt="Foto de la receta">
+      <button class="btn sec" id="recFotoCambiar" type="button">Cambiar</button>
+      <button class="btn peligro" id="recFotoQuitar" type="button">Quitar</button>`;
+    document.getElementById('recFotoCambiar').addEventListener('click', ()=>document.getElementById('recFotoIn').click());
+    document.getElementById('recFotoQuitar').addEventListener('click', ()=>{ recFotoPend = null; renderFotoZona(null); });
+  } else {
+    z.innerHTML = `<button class="recfoto-add" id="recFotoAdd" type="button">📷 Agregar foto de ilustración</button>`;
+    document.getElementById('recFotoAdd').addEventListener('click', ()=>document.getElementById('recFotoIn').click());
+  }
+}
+document.getElementById('recFotoIn').addEventListener('change', e => {
+  const file = e.target.files[0];
+  e.target.value='';
+  if(!file) return;
+  comprimirImagen(file, data => { recFotoPend = data; renderFotoZona(data); });
+});
+
+function abrirFormReceta(id){
+  recEditando = id ?? null;
+  poblarSelectBloques();
+  const sec = document.getElementById('recFormSec');
+  sec.hidden = false;
+  document.getElementById('recBorrar').hidden = recEditando==null;
+  document.getElementById('recFormTitulo').textContent = recEditando==null ? 'Nueva receta' : 'Editar receta';
+  recFotoPend = undefined;
+  renderFotoZona(null);
+  if(recEditando!=null){
+    const idAbierto = recEditando;
+    recFotoGet(idAbierto).then(f => {
+      if(f && recEditando===idAbierto && recFotoPend===undefined) renderFotoZona(f.data);
+    });
+  }
+  if(recEditando!=null){
+    const r = S.recetas.find(x=>x.id===recEditando);
+    if(r){
+      document.getElementById('recNombre').value = r.nombre;
+      if(plan().some(b=>b.id===r.bloque)) document.getElementById('recBloque').value = r.bloque;
+      poblarSelectOpciones();
+      document.getElementById('recOpcion').value = r.opcion!=null ? String(r.opcion) : '';
+      document.getElementById('recIng').value = r.ing||'';
+      document.getElementById('recPrep').value = r.prep||'';
+    }
+  } else {
+    document.getElementById('recNombre').value = '';
+    document.getElementById('recIng').value = '';
+    document.getElementById('recPrep').value = '';
+    document.getElementById('recOpcion').value = '';
+  }
+  sec.scrollIntoView({behavior:'smooth', block:'start'});
+  document.getElementById('recNombre').focus();
+}
+document.getElementById('btnNuevaReceta').addEventListener('click', ()=>abrirFormReceta(null));
+document.getElementById('recCancelar').addEventListener('click', ()=>{ document.getElementById('recFormSec').hidden = true; recEditando=null; });
+document.getElementById('recGuardar').addEventListener('click', () => {
+  const nombre = document.getElementById('recNombre').value.trim();
+  if(!nombre){ toast('Ponle un nombre a la receta'); return; }
+  const bloque = document.getElementById('recBloque').value;
+  const opcionV = document.getElementById('recOpcion').value;
+  const previa = recEditando!=null ? S.recetas.find(r=>r.id===recEditando) : null;
+  const receta = {
+    id: recEditando ?? nuevaRecetaId(),
+    nombre, bloque,
+    opcion: opcionV==='' ? null : +opcionV,
+    ing: document.getElementById('recIng').value.trim(),
+    prep: document.getElementById('recPrep').value.trim(),
+    ...(previa && previa.origen ? {origen:previa.origen} : {})
+  };
+  const i = S.recetas.findIndex(r=>r.id===receta.id);
+  if(i>=0) S.recetas[i] = receta; else S.recetas.push(receta);
+  save();
+  if(recFotoPend !== undefined){
+    if(recFotoPend) storePut('recfotos', {id:receta.id, data:recFotoPend});
+    else storeDel('recfotos', receta.id);
+  }
+  document.getElementById('recFormSec').hidden = true;
+  recEditando = null;
+  renderRecetas();
+  renderTimeline();
+  toast('🧑‍🍳 Receta guardada');
+});
+document.getElementById('recBorrar').addEventListener('click', () => {
+  if(recEditando==null) return;
+  confirmar('¿Eliminar receta?', 'Se eliminará esta receta y su foto. Los días donde la elegiste no pierden sus marcas.', () => {
+    storeDel('recfotos', recEditando);
+    S.recetas = S.recetas.filter(r=>r.id!==recEditando);
+    save();
+    document.getElementById('recFormSec').hidden = true;
+    recEditando = null;
+    renderRecetas();
+    renderTimeline();
+    toast('Receta eliminada');
+  });
+});
+
+/* ---------- PROGRESO ---------- */
+function renderProgreso(){
+  const {date} = bogota();
+  const r = rachas();
+  document.getElementById('tRacha').textContent = r.actual;
+  document.getElementById('tMejor').textContent = r.mejor;
+  const pesos = [...S.pesos].sort((a,b)=>a.d.localeCompare(b.d));
+  const ultimo = pesos[pesos.length-1];
+  document.getElementById('tPeso').textContent = ultimo ? ultimo.kg.toFixed(1) : '—';
+  const res = document.getElementById('pesoResumen');
+  if(pesos.length>=2){
+    const delta = ultimo.kg - pesos[0].kg;
+    const signo = delta<=0 ? '' : '+';
+    let txt = `Desde ${fechaCorta(pesos[0].d)}: ${signo}${delta.toFixed(1)} kg.`;
+    if(S.settings.meta){
+      const falta = ultimo.kg - S.settings.meta;
+      txt += falta>0 ? ` Te faltan ${falta.toFixed(1)} kg para tu meta de ${S.settings.meta} kg.` : ' 🎉 ¡Alcanzaste tu meta!';
+    }
+    res.textContent = txt;
+  } else {
+    res.textContent = 'Registra tu peso para ver tu evolución.';
+  }
+  renderChart(pesos);
+  renderHistorial();
+  renderFotos();
+  const hoyPeso = pesos.find(p=>p.d===date);
+  document.getElementById('inPeso').value = hoyPeso ? hoyPeso.kg : '';
+}
+
+/* Gráfica de peso — SVG, una serie */
+function renderChart(pesos){
+  const cont = document.getElementById('chartPeso');
+  if(pesos.length<2){
+    cont.innerHTML = `<p style="font-size:.85rem; color:var(--ink-3); padding:14px 0">📉 Con dos o más registros verás aquí tu curva de peso.</p>`;
+    return;
+  }
+  const datos = pesos.slice(-30);
+  const W=340, H=170, mL=38, mR=14, mT=14, mB=26;
+  const kgs = datos.map(p=>p.kg);
+  let yMin = Math.min(...kgs), yMax = Math.max(...kgs);
+  if(S.settings.meta){ yMin=Math.min(yMin,S.settings.meta); yMax=Math.max(yMax,S.settings.meta); }
+  const pad = Math.max((yMax-yMin)*0.15, 0.6);
+  yMin-=pad; yMax+=pad;
+  const X = i => mL + (datos.length===1?0:(i/(datos.length-1)))*(W-mL-mR);
+  const Y = kg => mT + (1-(kg-yMin)/(yMax-yMin))*(H-mT-mB);
+  let g='';
+  for(let k=0;k<3;k++){
+    const v = yMin + (k+1)*(yMax-yMin)/4;
+    g += `<line x1="${mL}" x2="${W-mR}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="1"/>
+          <text x="${mL-6}" y="${Y(v)+3}" text-anchor="end" font-size="9" font-family="var(--f-mono)" fill="var(--ink-3)">${v.toFixed(1)}</text>`;
+  }
+  let metaLine='';
+  if(S.settings.meta && S.settings.meta>yMin && S.settings.meta<yMax){
+    metaLine = `<line x1="${mL}" x2="${W-mR}" y1="${Y(S.settings.meta)}" y2="${Y(S.settings.meta)}" stroke="var(--b4)" stroke-width="1.5" stroke-dasharray="5 4"/>
+      <text x="${W-mR}" y="${Y(S.settings.meta)-4}" text-anchor="end" font-size="9" font-family="var(--f-mono)" fill="var(--b4)">meta ${S.settings.meta}</text>`;
+  }
+  const path = datos.map((p,i)=>`${i?'L':'M'}${X(i).toFixed(1)},${Y(p.kg).toFixed(1)}`).join(' ');
+  const area = path + ` L${X(datos.length-1).toFixed(1)},${H-mB} L${X(0).toFixed(1)},${H-mB} Z`;
+  let puntos='';
+  datos.forEach((p,i)=>{
+    const fin = i===datos.length-1;
+    puntos += `<circle cx="${X(i).toFixed(1)}" cy="${Y(p.kg).toFixed(1)}" r="${fin?5:4}" fill="var(--accent-strong)" stroke="var(--card)" stroke-width="2" data-i="${i}" style="cursor:pointer"/>`;
+    if(fin) puntos += `<text x="${X(i).toFixed(1)}" y="${Y(p.kg)-10}" text-anchor="middle" font-size="10" font-weight="700" font-family="var(--f-mono)" fill="var(--ink)">${p.kg.toFixed(1)}</text>`;
+  });
+  const ejeX = `<text x="${mL}" y="${H-8}" font-size="9" font-family="var(--f-mono)" fill="var(--ink-3)">${fechaCorta(datos[0].d)}</text>
+    <text x="${W-mR}" y="${H-8}" text-anchor="end" font-size="9" font-family="var(--f-mono)" fill="var(--ink-3)">${fechaCorta(datos[datos.length-1].d)}</text>`;
+  cont.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Evolución del peso: de ${datos[0].kg} a ${datos[datos.length-1].kg} kilogramos">
+    ${g}${metaLine}
+    <path d="${area}" fill="var(--accent)" opacity="0.18"/>
+    <path d="${path}" fill="none" stroke="var(--accent-strong)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    ${puntos}${ejeX}
+  </svg>`;
+  cont.querySelectorAll('circle').forEach(c => {
+    c.addEventListener('click', ev => {
+      const p = datos[+c.dataset.i];
+      const tip = document.getElementById('chartTip');
+      const rect = cont.getBoundingClientRect();
+      const cr = c.getBoundingClientRect();
+      tip.textContent = `${fechaCorta(p.d)} · ${p.kg.toFixed(1)} kg`;
+      tip.style.left = (cr.left-rect.left+cr.width/2)+'px';
+      tip.style.top = (cr.top-rect.top)+'px';
+      tip.style.display='block';
+      setTimeout(()=>tip.style.display='none', 2500);
+      ev.stopPropagation();
+    });
+  });
+}
+
+document.getElementById('btnPeso').addEventListener('click', () => {
+  const v = parseFloat(document.getElementById('inPeso').value);
+  if(!v || v<30 || v>300){ toast('Ingresa un peso válido'); return; }
+  const {date} = bogota();
+  S.pesos = S.pesos.filter(p=>p.d!==date);
+  S.pesos.push({d:date, kg:Math.round(v*10)/10});
+  save(); renderProgreso(); toast('⚖️ Peso registrado');
+});
+
+function renderHistorial(){
+  const {date} = bogota();
+  const cont = document.getElementById('histLista');
+  let html='';
+  for(let i=0;i<14;i++){
+    const f = diasAtras(date,i);
+    const st = statsDe(f);
+    const sinDatos = !tieneRegistros(f) && i>0;
+    html += `<div class="hist-fila" data-dia="${f}" role="button" tabindex="0" style="cursor:pointer">
+      <span class="hist-fecha">${i===0?'Hoy':fechaCorta(f)}</span>
+      <div class="hist-barra"><div style="width:${st.pct}%${sinDatos?';background:var(--line)':''}"></div></div>
+      <span class="hist-pct">${sinDatos?'—':st.pct+'%'}</span>
+      <span class="hist-med" title="Medicamentos">${!sinDatos && st.medsT>0 && st.medsH===st.medsT ? '💊' : ''}</span>
+    </div>`;
+  }
+  cont.innerHTML = html;
+  cont.querySelectorAll('[data-dia]').forEach(fila => {
+    const abrir = () => { irADia(fila.dataset.dia); irAVista('hoy'); };
+    fila.addEventListener('click', abrir);
+    fila.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' '){ e.preventDefault(); abrir(); } });
+  });
+}
+
+/* ---------- Fotos (IndexedDB): progreso y recetas ---------- */
+const dbp = new Promise((res, rej) => {
+  const r = indexedDB.open('planvital-fotos', 3);
+  r.onupgradeneeded = e => {
+    const db = e.target.result;
+    if(!db.objectStoreNames.contains('fotos')) db.createObjectStore('fotos', {keyPath:'id'});
+    if(!db.objectStoreNames.contains('recfotos')) db.createObjectStore('recfotos', {keyPath:'id'});
+    if(!db.objectStoreNames.contains('comidafotos')) db.createObjectStore('comidafotos', {keyPath:'id'});
+  };
+  r.onsuccess = e => res(e.target.result);
+  r.onerror = () => rej(r.error);
+});
+async function storeAll(st){
+  const db = await dbp;
+  return new Promise(res => {
+    const q = db.transaction(st).objectStore(st).getAll();
+    q.onsuccess = () => res(q.result||[]);
+    q.onerror = () => res([]);
+  });
+}
+async function storePut(st, obj){
+  const db = await dbp;
+  return new Promise(res => { const tx=db.transaction(st,'readwrite'); tx.objectStore(st).put(obj); tx.oncomplete=res; });
+}
+async function storeDel(st, id){
+  const db = await dbp;
+  return new Promise(res => { const tx=db.transaction(st,'readwrite'); tx.objectStore(st).delete(id); tx.oncomplete=res; });
+}
+const fotosAll = () => storeAll('fotos').then(f => f.sort((a,b)=>b.d.localeCompare(a.d)));
+const fotoPut = f => storePut('fotos', f);
+const fotoDel = id => storeDel('fotos', id);
+async function recFotoGet(id){
+  const db = await dbp;
+  return new Promise(res => {
+    const q = db.transaction('recfotos').objectStore('recfotos').get(id);
+    q.onsuccess = () => res(q.result||null);
+    q.onerror = () => res(null);
+  });
+}
+async function recFotosMap(){
+  const lista = await storeAll('recfotos');
+  return new Map(lista.map(f => [f.id, f.data]));
+}
+function comprimirImagen(file, cb){
+  const img = new Image();
+  const fr = new FileReader();
+  fr.onload = () => {
+    img.onload = () => {
+      const MAX = 900;
+      const k = Math.min(1, MAX/Math.max(img.width, img.height));
+      const cv = document.createElement('canvas');
+      cv.width = Math.round(img.width*k); cv.height = Math.round(img.height*k);
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      cb(cv.toDataURL('image/jpeg', 0.82));
+    };
+    img.src = fr.result;
+  };
+  fr.readAsDataURL(file);
+}
+async function renderFotos(){
+  const grid = document.getElementById('fotosGrid');
+  const fotos = await fotosAll();
+  let html = `<button class="subir-foto" id="btnFoto" aria-label="Agregar foto de progreso">＋</button>`;
+  for(const f of fotos){
+    html += `<figure data-id="${f.id}"><img src="${f.data}" alt="Foto de progreso del ${esc(fechaCorta(f.d))}" loading="lazy"><figcaption>${esc(fechaCorta(f.d))}</figcaption></figure>`;
+  }
+  grid.innerHTML = html;
+  document.getElementById('btnFoto').addEventListener('click', ()=>document.getElementById('inFoto').click());
+  grid.querySelectorAll('figure').forEach(fig => {
+    fig.addEventListener('click', async () => {
+      const fotos2 = await fotosAll();
+      const f = fotos2.find(x=>String(x.id)===fig.dataset.id);
+      if(!f) return;
+      document.getElementById('visorImg').src = f.data;
+      document.getElementById('visorFecha').textContent = fechaBonita(f.d);
+      document.getElementById('visorFoto').classList.add('on');
+      document.getElementById('visorBorrar').onclick = () => {
+        confirmar('¿Eliminar foto?', 'Se eliminará esta foto de progreso de forma permanente.', async () => {
+          await fotoDel(f.id);
+          document.getElementById('visorFoto').classList.remove('on');
+          renderFotos(); toast('Foto eliminada');
+        });
+      };
+    });
+  });
+}
+document.getElementById('visorCerrar').addEventListener('click', ()=>document.getElementById('visorFoto').classList.remove('on'));
+document.getElementById('inFoto').addEventListener('change', e => {
+  const file = e.target.files[0];
+  e.target.value='';
+  if(!file) return;
+  comprimirImagen(file, data => {
+    fotoPut({id:Date.now(), d:bogota().date, data}).then(()=>{ renderFotos(); toast('📸 Foto guardada'); });
+  });
+});
+
+/* ---------- AJUSTES ---------- */
+function renderAjustes(){
+  document.getElementById('setNombre').value = S.settings.nombre || '';
+  document.getElementById('setMeta').value = S.settings.meta || '';
+  aplicarTema();
+  aplicarAcento();
+  // horarios dinámicos según el plan vigente
+  const cont = document.getElementById('listaHorarios');
+  cont.innerHTML = plan().map(b => `<div class="campo">
+    <span class="et">${esc(b.emoji||'')} ${esc(b.nombre)}</span>
+    <input type="time" data-time="${esc(b.id)}" value="${esc(horaDe(b.id))}">
+  </div>`).join('');
+  cont.querySelectorAll('[data-time]').forEach(inp => {
+    inp.addEventListener('change', e => {
+      if(!e.target.value) return;
+      S.settings.times[inp.dataset.time] = e.target.value;
+      save();
+      const el = document.querySelector(`[data-hora="${CSS.escape(inp.dataset.time)}"]`);
+      if(el) el.textContent = hora12(e.target.value);
+      marcarBloqueActual();
+      toast('Horario actualizado');
+    });
+  });
+  document.getElementById('setNotif').checked = S.settings.notif;
+  actualizarEstadoNotif();
+}
+document.getElementById('setNombre').addEventListener('change', e => { S.settings.nombre = e.target.value.trim(); save(); renderCabecera(); toast('Guardado'); });
+document.getElementById('setMeta').addEventListener('change', e => { const v=parseFloat(e.target.value); S.settings.meta = (v>=30&&v<=300)?v:null; save(); toast('Guardado'); });
+
+function actualizarEstadoNotif(){
+  const est = document.getElementById('notifEstado');
+  if(!('Notification' in window)){ est.textContent='No disponibles en este navegador'; return; }
+  if(!S.settings.notif){ est.textContent='Desactivadas'; return; }
+  est.textContent = Notification.permission==='granted' ? 'Activas mientras la app esté abierta' :
+    Notification.permission==='denied' ? 'Bloqueadas por el navegador — revisa los permisos del sitio' : 'Falta conceder permiso';
+}
+document.getElementById('setNotif').addEventListener('change', async e => {
+  if(e.target.checked){
+    if(!('Notification' in window)){ toast('Tu navegador no soporta notificaciones'); e.target.checked=false; return; }
+    const p = await Notification.requestPermission();
+    if(p!=='granted'){ toast('Permiso de notificaciones no concedido'); e.target.checked=false; S.settings.notif=false; save(); actualizarEstadoNotif(); return; }
+    S.settings.notif = true; save(); toast('🔔 Recordatorios activados');
+  } else {
+    S.settings.notif = false; save(); toast('Recordatorios desactivados');
+  }
+  actualizarEstadoNotif();
+});
+
+/* Recordatorios: revisa cada 20 s la hora de Bogotá (siempre sobre el día real) */
+function textoRecordatorio(b){
+  const partes=[];
+  if(b.meds.length) partes.push('💊 ' + b.meds.map(m=>m.lb).join(', '));
+  if(b.fijos.length) partes.push(b.fijos.map(f=>f.lb).join(' · '));
+  if(b.opciones && b.opciones.length) partes.push('y elige tu opción');
+  return partes.join(' · ') || 'Es hora de tu registro';
+}
+function revisarRecordatorios(){
+  if(!S.settings.notif || !('Notification' in window) || Notification.permission!=='granted') return;
+  const {date, hm} = bogota();
+  for(const b of plan()){
+    const key = `${date}:${b.id}`;
+    if(S.notified[key]) continue;
+    if(horaDe(b.id) === hm){
+      S.notified[key]=true;
+      for(const k of Object.keys(S.notified)) if(!k.startsWith(date)) delete S.notified[k];
+      save();
+      try{ new Notification(`${b.emoji||''} ${b.nombre} — ${hora12(hm)}`, {body:textoRecordatorio(b), tag:key}); }catch(err){}
+    }
+  }
+}
+
+/* ---------- Importar / exportar plan ---------- */
+function validarPlan(p){
+  if(!Array.isArray(p) || !p.length) return 'El archivo no contiene una lista de bloques.';
+  const ids = new Set();
+  for(const b of p){
+    if(typeof b.id!=='string' || !b.id.trim()) return 'Cada bloque necesita un "id" de texto.';
+    if(ids.has(b.id)) return `Hay dos bloques con el mismo id: "${b.id}".`;
+    ids.add(b.id);
+    if(typeof b.nombre!=='string' || !b.nombre.trim()) return `El bloque "${b.id}" necesita un "nombre".`;
+    b.fijos = Array.isArray(b.fijos) ? b.fijos : [];
+    b.meds = Array.isArray(b.meds) ? b.meds : [];
+    b.opciones = Array.isArray(b.opciones) ? b.opciones : null;
+    b.extra = (b.extra && typeof b.extra==='object') ? b.extra : null;
+    const itemIds = new Set();
+    for(const lista of [b.fijos, b.meds]){
+      for(const it of lista){
+        if(typeof it.id!=='string' || !it.id.trim() || typeof it.lb!=='string' || !it.lb.trim())
+          return `Un ítem del bloque "${b.id}" necesita "id" y "lb" (etiqueta).`;
+        if(itemIds.has(it.id)) return `Ítem repetido "${it.id}" en el bloque "${b.id}".`;
+        itemIds.add(it.id);
+      }
+    }
+    if(b.extra && (typeof b.extra.id!=='string' || typeof b.extra.lb!=='string')) return `El "extra" del bloque "${b.id}" necesita "id" y "lb".`;
+    if(b.opciones) for(const o of b.opciones){ if(typeof o.lb!=='string' || !o.lb.trim()) return `Cada opción del bloque "${b.id}" necesita "lb" (etiqueta).`; }
+  }
+  return null;
+}
+document.getElementById('btnExportarPlan').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(plan(), null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `plan-dieta-${bogota().date}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('📦 Plan exportado');
+});
+document.getElementById('btnImportarPlan').addEventListener('click', ()=>document.getElementById('inPlan').click());
+document.getElementById('inPlan').addEventListener('change', e => {
+  const file = e.target.files[0];
+  e.target.value='';
+  if(!file) return;
+  const fr = new FileReader();
+  fr.onload = () => {
+    let p;
+    try{ p = JSON.parse(fr.result); }
+    catch(err){ toast('El archivo no es un JSON válido'); return; }
+    const error = validarPlan(p);
+    if(error){ toast('Plan no válido'); confirmar('Plan no válido', error, null); return; }
+    confirmar('¿Importar este plan?', `Se reemplazará tu dieta actual por "${p.map(b=>b.nombre).join(', ')}". Tu historial de días anteriores no se borra.`, () => {
+      S.plan = p;
+      for(const b of p) if(!S.settings.times[b.id]) S.settings.times[b.id] = HORAS_DEF[b.id] || '12:00';
+      sembrarRecetasDelPlan(); // las opciones nuevas también quedan como recetas
+      save();
+      renderTimeline(); renderAjustes();
+      toast('✅ Plan actualizado');
+    });
+  };
+  fr.readAsText(file);
+});
+
+/* ---------- Exportar historial / reiniciar / borrar ---------- */
+document.getElementById('btnExportar').addEventListener('click', () => {
+  const datos = {exportado:new Date().toISOString(), plan:plan(), recetas:S.recetas, dias:S.days, pesos:S.pesos, ajustes:{horarios:S.settings.times, meta:S.settings.meta}};
+  const blob = new Blob([JSON.stringify(datos, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `mi-plan-vital-${bogota().date}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('📦 Historial exportado');
+});
+document.getElementById('btnReiniciarHoy').addEventListener('click', () => {
+  confirmar('¿Reiniciar hoy?', 'Se desmarcarán todas las casillas y opciones del día de hoy. Esta acción no se puede deshacer.', () => {
+    const {date} = bogota();
+    S.days[date] = {checks:{}, opts:{}, rec:{}};
+    save();
+    if(viewDate===date) renderTimeline();
+    toast('Día reiniciado');
+  });
+});
+document.getElementById('btnBorrarTodo').addEventListener('click', () => {
+  confirmar('¿Borrar todo?', 'Se eliminará TODO el historial, pesos, recetas y ajustes de este dispositivo. Las fotos también. No se puede deshacer.', () => {
+    confirmar('Última confirmación', '¿Seguro? Considera exportar primero.', async () => {
+      localStorage.removeItem(LS_KEY);
+      const fotos = await fotosAll();
+      for(const f of fotos) await fotoDel(f.id);
+      const recf = await storeAll('recfotos');
+      for(const f of recf) await storeDel('recfotos', f.id);
+      const comf = await storeAll('comidafotos');
+      for(const f of comf) await storeDel('comidafotos', f.id);
+      S = load();
+      sembrarRecetasDelPlan();
+      viewDate = bogota().date;
+      aplicarTema();
+      renderCabecera(); renderDiaNav(); renderTimeline(); renderAjustes();
+      toast('Datos borrados');
+    });
+  });
+});
+
+/* ---------- Ciclo de vida ---------- */
+let fechaActual = bogota().date;
+function tick(){
+  const {date} = bogota();
+  if(date !== fechaActual){
+    const veniaEnHoy = viewDate === fechaActual;
+    fechaActual = date;
+    if(veniaEnHoy) viewDate = date;
+    renderCabecera(); renderDiaNav(); renderTimeline();
+  }
+  marcarBloqueActual();
+  revisarRecordatorios();
+}
+setInterval(tick, 20000);
+document.addEventListener('visibilitychange', () => { if(!document.hidden) tick(); });
+
+aplicarTema();
+aplicarAcento();
+if(!S.planSembrado) sembrarRecetasDelPlan();
+renderCabecera();
+renderDiaNav();
+renderTimeline();
+
+/* Service worker para funcionar sin conexión (solo cuando está desplegada en https) */
+if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
