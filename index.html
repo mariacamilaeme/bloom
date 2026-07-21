@@ -316,7 +316,78 @@
   #visorFoto img{max-width:100%; max-height:75vh; border-radius:12px}
   #visorFoto .acciones{display:flex; gap:12px; margin-top:16px}
   #visorFoto .fecha-f{color:#fff; font-family:var(--f-mono); font-size:.8rem; margin-top:10px}
+
+  /* ============ BIENVENIDA (login) ============ */
+  #welcome{position:fixed; inset:0; z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px 26px calc(40px + env(safe-area-inset-bottom)); text-align:center; overflow:hidden;
+    background:
+      radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--accent) 34%, var(--ground)) 0%, transparent 60%),
+      radial-gradient(100% 70% at 50% 100%, color-mix(in srgb, var(--accent-strong) 20%, var(--ground)) 0%, transparent 55%),
+      var(--fondo);
+    transition:opacity .55s ease, visibility .55s ease}
+  #welcome.oculto{opacity:0; visibility:hidden; pointer-events:none}
+  #welcomeCanvas{position:absolute; inset:0; width:100%; height:100%; pointer-events:none}
+  #welcome .contenido{position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; width:100%; max-width:340px; animation:w-surgir .8s ease both}
+  @keyframes w-surgir{from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:translateY(0)}}
+
+  /* Flor que se abre */
+  .flor{position:relative; width:150px; height:150px; margin-bottom:8px; filter:drop-shadow(0 10px 22px color-mix(in srgb, var(--accent-strong) 34%, transparent))}
+  .flor .p{position:absolute; inset:0; transform:rotate(calc(var(--i) * 72deg)) scale(0); opacity:0;
+    animation:w-abrir .7s cubic-bezier(.2,.85,.3,1.25) both; animation-delay:calc(.35s + var(--i) * .1s)}
+  .flor .p::before{content:''; position:absolute; top:4%; left:50%; margin-left:-25px; width:50px; height:66px;
+    border-radius:50% 50% 48% 48% / 72% 72% 40% 40%;
+    background:linear-gradient(160deg, color-mix(in srgb, var(--accent) 55%, #fff) 0%, var(--accent) 55%, var(--accent-strong) 100%)}
+  @keyframes w-abrir{from{transform:rotate(calc(var(--i) * 72deg)) scale(0); opacity:0} to{transform:rotate(calc(var(--i) * 72deg)) scale(1); opacity:1}}
+  .flor .nucleo{position:absolute; left:50%; top:50%; width:44px; height:44px; margin:-22px 0 0 -22px; border-radius:50%;
+    background:radial-gradient(circle at 40% 35%, color-mix(in srgb, var(--accent) 30%, #fff), var(--accent-strong));
+    box-shadow:inset 0 -3px 6px color-mix(in srgb, var(--accent-strong) 60%, transparent);
+    transform:scale(0); animation:w-nucleo .5s cubic-bezier(.2,.85,.3,1.4) both; animation-delay:.95s; z-index:3}
+  @keyframes w-nucleo{from{transform:scale(0)} to{transform:scale(1)}}
+  .flor.viva{animation:w-respira 5s ease-in-out infinite 1.4s}
+  @keyframes w-respira{0%,100%{transform:scale(1) rotate(0)} 50%{transform:scale(1.045) rotate(2deg)}}
+
+  #welcome .marca{font-family:var(--f-display); font-weight:600; font-size:3rem; line-height:1; letter-spacing:.01em; color:var(--accent-strong); margin-top:14px}
+  #welcome .lema{font-family:var(--f-display); font-style:italic; font-size:1.1rem; color:var(--ink-2); margin-top:6px}
+  #welcome .regla{width:46px; height:2px; border-radius:2px; background:var(--accent); opacity:.6; margin:18px 0}
+  #welcome .saludo-w{font-size:1.05rem; color:var(--ink); font-weight:600; min-height:1.4em; text-wrap:balance}
+  #welcome .frase-w{font-family:var(--f-display); font-style:italic; font-size:.95rem; color:var(--ink-2); margin-top:8px; text-wrap:balance}
+  #welcome .campo-w{width:100%; margin-top:22px}
+  #welcome .campo-w label{display:block; font-size:.72rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--accent-strong); margin-bottom:6px}
+  #welcome .campo-w input{width:100%; text-align:center; background:var(--card); border:1.5px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius:14px; padding:13px 16px; font-size:1.05rem; color:var(--ink)}
+  #welcome .btn-w{margin-top:20px; width:100%; background:var(--accent); color:var(--accent-ink); font-weight:800; font-size:1.02rem; border-radius:15px; padding:15px; box-shadow:0 8px 20px color-mix(in srgb, var(--accent-strong) 30%, transparent)}
+  #welcome .btn-w:active{transform:translateY(1px)}
+  #welcome .pie-w{font-size:.72rem; color:var(--ink-3); margin-top:22px}
+  @media (prefers-reduced-motion: reduce){
+    .flor .p, .flor .nucleo{animation:none; transform:rotate(calc(var(--i) * 72deg)) scale(1); opacity:1}
+    .flor .nucleo{transform:scale(1)}
+    .flor.viva{animation:none}
+    #welcome .contenido{animation:none}
+  }
 </style>
+
+<div id="welcome" role="dialog" aria-modal="true" aria-label="Bienvenida a Bloom">
+  <canvas id="welcomeCanvas" aria-hidden="true"></canvas>
+  <div class="contenido">
+    <div class="flor" id="florW" aria-hidden="true">
+      <span class="p" style="--i:0"></span>
+      <span class="p" style="--i:1"></span>
+      <span class="p" style="--i:2"></span>
+      <span class="p" style="--i:3"></span>
+      <span class="p" style="--i:4"></span>
+      <span class="nucleo"></span>
+    </div>
+    <div class="marca">Bloom</div>
+    <div class="lema">Tu compañía diaria</div>
+    <div class="regla" aria-hidden="true"></div>
+    <div class="saludo-w" id="welcomeSaludo"></div>
+    <div class="frase-w" id="welcomeFrase"></div>
+    <div class="campo-w" id="welcomeCampo" hidden>
+      <label for="welcomeNombre">¿Cómo te llamas?</label>
+      <input type="text" id="welcomeNombre" placeholder="Tu nombre" autocomplete="given-name" maxlength="30" enterkeyhint="go">
+    </div>
+    <button class="btn-w" id="welcomeBtn">Entrar 🌸</button>
+    <div class="pie-w">Un espacio para florecer, un día a la vez</div>
+  </div>
+</div>
 
 <div class="wrap">
   <header class="top">
@@ -929,11 +1000,13 @@ function aplicarAcento(){
     // al final del body para ganar en orden de cascada al estilo principal
     (document.body || document.documentElement).appendChild(el);
   }
+  const claro = `--accent:${a.hex}; --accent-ink:${tinta}; --accent-strong:${fuerteClaro}; ${vars(bDia)}`;
+  const oscuro = `--accent:${a.hex}; --accent-ink:${tinta}; --accent-strong:${fuerteOscuro}; ${vars(bNoche)}`;
   el.textContent = `
-    :root{--accent:${a.hex}; --accent-ink:${tinta}; --accent-strong:${fuerteClaro}; ${vars(bDia)}}
-    @media (prefers-color-scheme: dark){ :root{--accent-strong:${fuerteOscuro}; ${vars(bNoche)}} }
-    :root[data-theme="dark"]{--accent-strong:${fuerteOscuro}; ${vars(bNoche)}}
-    :root[data-theme="light"]{--accent-strong:${fuerteClaro}; ${vars(bDia)}}`;
+    :root{${claro}}
+    @media (prefers-color-scheme: dark){ :root{${oscuro}} }
+    :root[data-theme="dark"]{${oscuro}}
+    :root[data-theme="light"]{${claro}}`;
   document.querySelectorAll('[data-acento]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.acento===a.id)));
   const nom = document.getElementById('acentoNombre');
   if(nom) nom.textContent = 'Color: ' + a.nombre;
@@ -1897,6 +1970,86 @@ if(!S.planSembrado) sembrarRecetasDelPlan();
 renderCabecera();
 renderDiaNav();
 renderTimeline();
+
+/* ---------- Pantalla de bienvenida (login) ---------- */
+(function iniciarWelcome(){
+  const wel = document.getElementById('welcome');
+  const btn = document.getElementById('welcomeBtn');
+  const campo = document.getElementById('welcomeCampo');
+  const input = document.getElementById('welcomeNombre');
+  const flor = document.getElementById('florW');
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Saludo según hora + si ya sabemos su nombre
+  const h = +bogota().hm.split(':')[0];
+  const momento = h<12 ? 'Buenos días' : h<18 ? 'Buenas tardes' : 'Buenas noches';
+  if(S.settings.nombre){
+    document.getElementById('welcomeSaludo').textContent = `${momento}, ${S.settings.nombre} 🌸`;
+    btn.textContent = 'Entrar 🌸';
+  } else {
+    document.getElementById('welcomeSaludo').textContent = 'Hola, bienvenida 🌸';
+    campo.hidden = false;
+    btn.textContent = 'Comenzar 🌸';
+  }
+  document.getElementById('welcomeFrase').textContent = '“' + fraseDelDia(bogota().date) + '”';
+  if(!reduce) flor.classList.add('viva');
+
+  // Lluvia de pétalos en canvas
+  let raf = null, corriendo = true;
+  if(!reduce){
+    const cv = document.getElementById('welcomeCanvas');
+    const ctx = cv.getContext('2d');
+    let W, H, dpr, petalos = [];
+    const acc = getComputedStyle(document.documentElement);
+    const c1 = acc.getPropertyValue('--accent').trim() || '#F2BCCB';
+    const c2 = acc.getPropertyValue('--accent-strong').trim() || '#C97';
+    const colores = [c1, c2, c1];
+    function medir(){
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      W = wel.clientWidth; H = wel.clientHeight;
+      cv.width = W*dpr; cv.height = H*dpr;
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+    }
+    function nuevo(y){
+      return {x:Math.random()*W, y: y==null ? Math.random()*H : y,
+        s:6+Math.random()*8, vel:.25+Math.random()*.55,
+        rot:Math.random()*Math.PI*2, vr:(Math.random()-.5)*.03,
+        amp:12+Math.random()*22, fase:Math.random()*Math.PI*2, vf:.006+Math.random()*.01,
+        col:colores[(Math.random()*colores.length)|0], alpha:.28+Math.random()*.32};
+    }
+    medir();
+    petalos = Array.from({length:22}, () => nuevo());
+    function frame(){
+      if(!corriendo) return;
+      ctx.clearRect(0,0,W,H);
+      for(const p of petalos){
+        p.y += p.vel; p.fase += p.vf; p.rot += p.vr;
+        const x = p.x + Math.sin(p.fase)*p.amp;
+        if(p.y - p.s > H){ Object.assign(p, nuevo(-10)); }
+        ctx.save(); ctx.translate(x, p.y); ctx.rotate(p.rot);
+        ctx.globalAlpha = p.alpha; ctx.fillStyle = p.col;
+        ctx.beginPath(); ctx.ellipse(0,0,p.s*0.62,p.s,0,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
+      raf = requestAnimationFrame(frame);
+    }
+    frame();
+    window.addEventListener('resize', medir);
+    wel._detener = () => { corriendo = false; if(raf) cancelAnimationFrame(raf); };
+  }
+
+  function entrar(){
+    if(!campo.hidden){
+      const nom = input.value.trim();
+      if(nom){ S.settings.nombre = nom; save(); renderCabecera(); }
+    }
+    wel.classList.add('oculto');
+    if(wel._detener) setTimeout(wel._detener, 600);
+  }
+  btn.addEventListener('click', entrar);
+  input.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); entrar(); } });
+  setTimeout(() => { (campo.hidden ? btn : input).focus(); }, 400);
+})();
 
 /* Service worker para funcionar sin conexión (solo cuando está desplegada en https) */
 if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){

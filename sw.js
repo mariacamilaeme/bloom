@@ -1,7 +1,7 @@
 /* Service worker de Bloom — permite abrir la app sin conexión.
    Al publicar una versión nueva, cambia el número de VERSION para que
    los teléfonos descarguen los archivos actualizados. */
-const VERSION = 'bloom-v2';
+const VERSION = 'bloom-v3';
 const ARCHIVOS = [
   './',
   './index.html',
