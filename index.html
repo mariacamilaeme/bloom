@@ -1239,14 +1239,31 @@ document.getElementById('timeline').addEventListener('change', e => {
   save();
   actualizarDerivados();
 });
+/* Recuerda si la opción ya estaba elegida antes del toque, para poder desmarcarla */
+const radioPrev = new WeakMap();
+document.getElementById('timeline').addEventListener('pointerdown', e => {
+  const r = e.target.closest('label.item')?.querySelector('input[type=radio][data-opt]');
+  if(r) radioPrev.set(r, r.checked);
+});
 document.getElementById('timeline').addEventListener('click', e => {
   const vf = e.target.closest('[data-verfoto]');
   if(vf){ verFotoComida(vf.dataset.verfoto); return; }
   const bf = e.target.closest('[data-fotocomida]');
   if(bf){ fotoComidaBloque = bf.dataset.fotocomida; document.getElementById('inFotoComida').click(); return; }
   const chip = e.target.closest('.rec-chip');
-  if(!chip) return;
-  abrirRecetaSheet(+chip.dataset.receta, chip.dataset.bloque);
+  if(chip){ abrirRecetaSheet(+chip.dataset.receta, chip.dataset.bloque); return; }
+  // Tocar la opción ya elegida la desmarca
+  const radio = e.target.closest('label.item')?.querySelector('input[type=radio][data-opt]');
+  if(radio && radioPrev.get(radio)){
+    e.preventDefault();
+    radio.checked = false;
+    setTimeout(() => { radio.checked = false; }, 0); // por si la activación nativa lo re-marca
+    const d = dayData(viewDate);
+    delete d.opts[radio.dataset.bloque];
+    save();
+    actualizarDerivados();
+    toast('Opción quitada');
+  }
 });
 
 /* ---------- Fotos de lo que comí (libres: las que quieras por comida y día) ---------- */
