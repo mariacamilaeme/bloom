@@ -354,6 +354,13 @@ function aplicarAcento(){
   if(nom) nom.textContent = 'Color: ' + a.nombre;
   const picker = document.getElementById('acentoCustom');
   if(picker) picker.value = a.hex;
+  // La barra del navegador (theme-color) acompaña al fondo real de la app
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if(meta){
+    setTimeout(() => {
+      try{ if(document.body) meta.setAttribute('content', getComputedStyle(document.body).backgroundColor); }catch(err){}
+    }, 50);
+  }
 }
 document.querySelectorAll('button[data-acento]').forEach(b => {
   b.addEventListener('click', () => { S.settings.acento = b.dataset.acento; save(); aplicarAcento(); });
@@ -473,9 +480,11 @@ function itemHTML(it, tipo, bloqueId, checked){
   </label>`;
 }
 /* Chips de recetas propias de un bloque, por categoría (comida | bebida).
+   Las comidas pertenecen a su bloque; las bebidas son globales: todas están
+   disponibles en cualquier momento del día.
    Para bebida, mostrarVacio=true muestra siempre la sección con un botón "+ Bebida". */
 function chipsRecetaHTML(bid, cat, d, mostrarVacio){
-  const recs = S.recetas.filter(r => r.bloque === bid && catReceta(r) === cat);
+  const recs = S.recetas.filter(r => catReceta(r) === cat && (cat === 'bebida' || r.bloque === bid));
   if(!recs.length && !mostrarVacio) return '';
   const elegida = cat==='bebida' ? d.recBebida[bid] : d.rec[bid];
   const titulo = cat==='bebida' ? '🥤 Mi bebida de este día' : '🧑‍🍳 Mi receta de este día';
@@ -635,7 +644,7 @@ async function pintarFotosComidas(){
     if(!fotos.length){ cont.hidden = true; cont.innerHTML = ''; continue; }
     cont.hidden = false;
     cont.innerHTML = fotos.map(f =>
-      `<button class="fc-thumb" data-verfoto="${f.id}" aria-label="Ver foto de ${esc(b.nombre)}"><img src="${f.data}" alt=""></button>`
+      `<button class="fc-thumb" data-verfoto="${f.id}" aria-label="Ver foto de ${esc(b.nombre)}"><img src="${f.data}" alt="" width="64" height="64" loading="lazy"></button>`
     ).join('');
   }
 }
@@ -808,8 +817,8 @@ async function renderRecetas(){
     else if(b && r.opcion!=null && b.opciones && b.opciones[r.opcion]) baseLb = `Basada en: ${b.opciones[r.opcion].lb}`;
     else baseLb = 'Receta propia';
     const foto = fotos.get(r.id);
-    return `<div class="rec-card" data-editar="${r.id}" role="button" tabindex="0">
-      ${foto ? `<img class="thumb" src="${foto}" alt="">` : ''}
+    return `<div class="rec-card" data-editar="${r.id}" role="button" tabindex="0" aria-label="Editar receta ${esc(r.nombre)}">
+      ${foto ? `<img class="thumb" src="${foto}" alt="" width="56" height="56" loading="lazy">` : ''}
       <div class="cuerpo">
         <div class="n">${cat==='bebida'?'🥤 ':'🍽️ '}${esc(r.nombre)}</div>
         <div class="base">${esc(baseLb)}</div>
@@ -827,18 +836,26 @@ async function renderRecetas(){
   const P = plan();
   const pasa = r => filtroReceta==='todas' || catReceta(r)===filtroReceta;
   let algo = false;
+  // Comidas: agrupadas por momento del día
   P.forEach((b, i) => {
-    const recs = S.recetas.filter(r=>r.bloque===b.id && pasa(r));
+    const recs = S.recetas.filter(r=>r.bloque===b.id && catReceta(r)==='comida' && pasa(r));
     if(!recs.length) return;
     algo = true;
     html += `<div class="rec-bloque-t" style="--bc:var(${colorDe(i)})"><span class="dot"></span>${esc(b.emoji||'')} ${esc(b.nombre)}</div>`;
     for(const r of recs) html += cardHTML(r, b);
   });
-  const huerfanas = S.recetas.filter(r => !P.some(b=>b.id===r.bloque) && pasa(r));
+  const huerfanas = S.recetas.filter(r => catReceta(r)==='comida' && !P.some(b=>b.id===r.bloque) && pasa(r));
   if(huerfanas.length){
     algo = true;
     html += `<div class="rec-bloque-t"><span class="dot" style="background:var(--ink-3)"></span>De un plan anterior</div>`;
     for(const r of huerfanas) html += cardHTML(r, null);
+  }
+  // Bebidas: una sola colección global, disponible en cualquier momento
+  const bebidas = S.recetas.filter(r => catReceta(r)==='bebida' && pasa(r));
+  if(bebidas.length){
+    algo = true;
+    html += `<div class="rec-bloque-t"><span class="dot" style="background:var(--accent-strong)"></span>🥤 Bebidas · para cualquier momento</div>`;
+    for(const r of bebidas) html += cardHTML(r, null);
   }
   if(!algo) html += `<div class="rec-vacio">No tienes recetas de esta categoría todavía.</div>`;
   cont.innerHTML = html;
@@ -852,7 +869,10 @@ async function renderRecetas(){
 let recTipo = 'comida'; // categoría en edición
 function aplicarRecTipo(){
   document.querySelectorAll('[data-rectipo]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.rectipo===recTipo)));
+  // Las bebidas son globales: no llevan momento del día ni opción base
   document.getElementById('recCampoOpcion').hidden = recTipo === 'bebida';
+  const campoBloque = document.getElementById('recCampoBloque');
+  if(campoBloque) campoBloque.hidden = recTipo === 'bebida';
   poblarSelectBloques();
 }
 document.querySelectorAll('[data-rectipo]').forEach(b => {
@@ -938,20 +958,18 @@ function abrirFormReceta(id){
   document.getElementById('recNombre').focus();
 }
 document.getElementById('btnNuevaReceta').addEventListener('click', ()=>abrirFormReceta(null));
-/* Crear una bebida nueva ya asignada a un bloque, desde el timeline */
-function abrirNuevaBebida(bid){
+/* Crear una bebida nueva desde el timeline (las bebidas son globales) */
+function abrirNuevaBebida(){
   irAVista('recetas');
   abrirFormReceta(null);
   recTipo = 'bebida';
   aplicarRecTipo();
-  const sel = document.getElementById('recBloque');
-  if([...sel.options].some(o => o.value === bid)) sel.value = bid;
 }
 document.getElementById('recCancelar').addEventListener('click', ()=>{ document.getElementById('recFormSec').hidden = true; recEditando=null; });
 document.getElementById('recGuardar').addEventListener('click', () => {
   const nombre = document.getElementById('recNombre').value.trim();
   if(!nombre){ toast('Ponle un nombre a la receta'); return; }
-  const bloque = document.getElementById('recBloque').value;
+  const bloque = recTipo==='bebida' ? 'bebidas' : document.getElementById('recBloque').value;
   const opcionV = document.getElementById('recOpcion').value;
   const previa = recEditando!=null ? S.recetas.find(r=>r.id===recEditando) : null;
   const receta = {
@@ -1174,11 +1192,12 @@ async function renderFotos(){
   const fotos = await fotosAll();
   let html = `<button class="subir-foto" id="btnFoto" aria-label="Agregar foto de progreso">＋</button>`;
   for(const f of fotos){
-    html += `<figure data-id="${f.id}"><img src="${f.data}" alt="Foto de progreso del ${esc(fechaCorta(f.d))}" loading="lazy"><figcaption>${esc(fechaCorta(f.d))}</figcaption></figure>`;
+    html += `<figure data-id="${f.id}" role="button" tabindex="0" aria-label="Ver foto de progreso del ${esc(fechaCorta(f.d))}"><img src="${f.data}" alt="Foto de progreso del ${esc(fechaCorta(f.d))}" width="300" height="400" loading="lazy"><figcaption>${esc(fechaCorta(f.d))}</figcaption></figure>`;
   }
   grid.innerHTML = html;
   document.getElementById('btnFoto').addEventListener('click', ()=>document.getElementById('inFoto').click());
   grid.querySelectorAll('figure').forEach(fig => {
+    fig.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' '){ e.preventDefault(); fig.click(); } });
     fig.addEventListener('click', async () => {
       const fotos2 = await fotosAll();
       const f = fotos2.find(x=>String(x.id)===fig.dataset.id);
@@ -1216,7 +1235,7 @@ function renderAjustes(){
   const cont = document.getElementById('listaHorarios');
   cont.innerHTML = plan().map(b => `<div class="campo">
     <span class="et">${esc(b.emoji||'')} ${esc(b.nombre)}</span>
-    <input type="time" data-time="${esc(b.id)}" value="${esc(horaDe(b.id))}">
+    <input type="time" data-time="${esc(b.id)}" value="${esc(horaDe(b.id))}" aria-label="Hora de ${esc(b.nombre)}">
   </div>`).join('');
   cont.querySelectorAll('[data-time]').forEach(inp => {
     inp.addEventListener('change', e => {
