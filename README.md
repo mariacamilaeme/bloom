@@ -1,6 +1,6 @@
-# Mi Plan Vital 🌱
+# Bloom 🌸
 
-App personal de seguimiento diario de alimentación, medicamentos y peso.
+Compañía diaria de alimentación, medicamentos y bienestar — una app personal.
 Es una **PWA estática** (sin servidor ni base de datos): todos los datos se guardan
 en el dispositivo de quien la usa (localStorage + IndexedDB). Nada sale a internet.
 
@@ -15,14 +15,14 @@ en el dispositivo de quien la usa (localStorage + IndexedDB). Nada sale a intern
 
 ## Repositorio
 
-Código en GitHub (privado): https://github.com/mariacamilaeme/mi-plan-vital
+Código en GitHub (privado): https://github.com/mariacamilaeme/bloom
 
 ## Desplegar en Vercel (primera vez)
 
 **Opción recomendada — conectar el repositorio (despliegue automático):**
 
 1. Entra a [vercel.com/new](https://vercel.com/new) con tu cuenta.
-2. Importa el repositorio `mariacamilaeme/mi-plan-vital` (autoriza el acceso de Vercel
+2. Importa el repositorio `mariacamilaeme/bloom` (autoriza el acceso de Vercel
    a GitHub si te lo pide). Framework: **Other**, sin build command.
 3. Desde entonces, cada `git push` publica solo — no hay que correr nada más.
 
@@ -36,7 +36,7 @@ npx vercel --prod
 ## Actualizar la app después de un cambio
 
 1. Reemplaza `index.html` (y lo que haya cambiado).
-2. **Sube el número de versión en `sw.js`** (`plan-vital-v1` → `plan-vital-v2`) para que
+2. **Sube el número de versión en `sw.js`** (`bloom-v1` → `bloom-v2`) para que
    los teléfonos que ya la instalaron descarguen la versión nueva.
 3. Publica:
    ```

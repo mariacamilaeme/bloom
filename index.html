@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#3E8E5E">
-<meta name="description" content="Seguimiento diario de alimentación, medicamentos y peso">
-<title>Mi Plan Vital</title>
+<meta name="theme-color" content="#A9DCC0">
+<meta name="description" content="Bloom — tu compañía diaria de alimentación, medicamentos y bienestar">
+<title>Bloom</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -571,7 +571,7 @@
 <script>
 'use strict';
 /* ================================================================
-   MI PLAN VITAL v3 — seguimiento diario de alimentación y medicamentos
+   BLOOM 🌸 — compañía diaria de alimentación, medicamentos y bienestar
    Calendario por día · plan importable · recetas propias · tema manual
    Zona horaria fija: America/Bogota. Datos solo en este dispositivo.
    ================================================================ */
@@ -940,7 +940,7 @@ function renderCabecera(){
   const h = +hm.split(':')[0];
   const saludo = h<12 ? 'Buenos días' : h<18 ? 'Buenas tardes' : 'Buenas noches';
   const nom = S.settings.nombre ? `, ${S.settings.nombre}` : '';
-  document.getElementById('saludo').textContent = `${saludo}${nom} 🌱`;
+  document.getElementById('saludo').textContent = `${saludo}${nom} 🌸`;
   document.getElementById('fraseDia').textContent = '“' + fraseDelDia(date) + '”';
 }
 
@@ -1763,7 +1763,7 @@ document.getElementById('btnExportar').addEventListener('click', () => {
   const blob = new Blob([JSON.stringify(datos, null, 2)], {type:'application/json'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `mi-plan-vital-${bogota().date}.json`;
+  a.download = `bloom-historial-${bogota().date}.json`;
   a.click();
   URL.revokeObjectURL(a.href);
   toast('📦 Historial exportado');

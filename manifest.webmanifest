@@ -1,14 +1,14 @@
 {
-  "name": "Mi Plan Vital",
-  "short_name": "Plan Vital",
-  "description": "Seguimiento diario de alimentación, medicamentos y peso",
+  "name": "Bloom",
+  "short_name": "Bloom",
+  "description": "Tu compañía diaria de alimentación, medicamentos y bienestar",
   "lang": "es",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#F4F6F2",
-  "theme_color": "#3E8E5E",
+  "theme_color": "#A9DCC0",
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
