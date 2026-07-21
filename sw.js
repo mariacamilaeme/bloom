@@ -1,7 +1,7 @@
 /* Service worker de Mi Plan Vital — permite abrir la app sin conexión.
    Al publicar una versión nueva, cambia el número de VERSION para que
    los teléfonos descarguen los archivos actualizados. */
-const VERSION = 'plan-vital-v1';
+const VERSION = 'plan-vital-v2';
 const ARCHIVOS = [
   './',
   './index.html',
