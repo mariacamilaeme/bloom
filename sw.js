@@ -1,7 +1,7 @@
 /* Service worker de Bloom — permite abrir la app sin conexión.
    Al publicar una versión nueva, cambia el número de VERSION para que
    los teléfonos descarguen los archivos actualizados. */
-const VERSION = 'bloom-v8';
+const VERSION = 'bloom-v9';
 const ARCHIVOS = [
   './',
   './index.html',
@@ -35,10 +35,15 @@ self.addEventListener('fetch', e => {
     );
     return;
   }
-  // El resto: primero caché, red como respaldo
+  // El resto (incluye las fuentes de Google): primero caché, red como respaldo.
+  // Las fuentes se guardan al primer uso para que la app abra igual sin conexión.
+  const url = new URL(e.request.url);
+  const cacheable = url.origin === location.origin ||
+    url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com';
   e.respondWith(
     caches.match(e.request).then(res => res || fetch(e.request).then(r => {
-      if (r.ok && new URL(e.request.url).origin === location.origin) {
+      // Las respuestas opacas (no-cors) llegan con ok=false: también valen para los hosts de fuentes
+      if ((r.ok || r.type === 'opaque') && cacheable) {
         const copia = r.clone(); caches.open(VERSION).then(c => c.put(e.request, copia));
       }
       return r;

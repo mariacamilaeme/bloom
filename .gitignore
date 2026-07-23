@@ -1,3 +1,5 @@
 .vercel/
 Thumbs.db
 desktop.ini
+.claude/
+*.dc.html

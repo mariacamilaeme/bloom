@@ -3,43 +3,61 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#A9DCC0">
+<meta name="theme-color" content="#FAF1F0">
 <meta name="description" content="Bloom — tu compañía diaria de alimentación, medicamentos y bienestar">
 <title>Bloom</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Figtree:wght@400;500;600;700;800&family=Parisienne&display=swap" rel="stylesheet" crossorigin="anonymous">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+
+<!-- ============ BIENVENIDA · jardín nocturno ============ -->
 <div id="welcome" role="dialog" aria-modal="true" aria-label="Bienvenida a Bloom">
+  <div class="w-blob b1" aria-hidden="true"></div>
+  <div class="w-blob b2" aria-hidden="true"></div>
+  <div class="w-blob b3" aria-hidden="true"></div>
+  <div id="wEstrellas" aria-hidden="true"></div>
+  <div id="wLuci" aria-hidden="true"></div>
   <canvas id="welcomeCanvas" aria-hidden="true"></canvas>
+
   <div class="contenido">
-    <svg class="logo" id="florW" viewBox="-100 -100 200 200" role="img" aria-label="Logo de Bloom">
-      <g class="lg-back">
-        <path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" transform="rotate(22)"></path>
-        <path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" transform="rotate(94)"></path>
-        <path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" transform="rotate(166)"></path>
-        <path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" transform="rotate(238)"></path>
-        <path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" transform="rotate(310)"></path>
-      </g>
-      <g class="lg-front">
-        <path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" transform="rotate(0)"></path>
-        <path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" transform="rotate(72)"></path>
-        <path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" transform="rotate(144)"></path>
-        <path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" transform="rotate(216)"></path>
-        <path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" transform="rotate(288)"></path>
-      </g>
-      <g class="lg-shine">
-        <path d="M0 -20 C 15 -34 12 -56 3 -74 C -3 -60 -11 -38 0 -20 Z" transform="rotate(0)"></path>
-        <path d="M0 -20 C 15 -34 12 -56 3 -74 C -3 -60 -11 -38 0 -20 Z" transform="rotate(72)"></path>
-        <path d="M0 -20 C 15 -34 12 -56 3 -74 C -3 -60 -11 -38 0 -20 Z" transform="rotate(144)"></path>
-        <path d="M0 -20 C 15 -34 12 -56 3 -74 C -3 -60 -11 -38 0 -20 Z" transform="rotate(216)"></path>
-        <path d="M0 -20 C 15 -34 12 -56 3 -74 C -3 -60 -11 -38 0 -20 Z" transform="rotate(288)"></path>
-      </g>
-      <circle class="lg-nucleo" cx="0" cy="0" r="16"></circle>
-      <circle class="lg-gota" cx="-5" cy="-6" r="5.5"></circle>
-    </svg>
+    <div class="flor3d" aria-hidden="true">
+      <div class="halo"></div>
+      <div class="escena">
+        <div id="wFlor">
+          <div class="respira-w">
+            <div class="capa atras">
+              <div class="petalo" style="--pr:36deg;  --pd:.10s"><svg viewBox="-100 -100 200 200"><path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" fill="#9E4180"/></svg></div>
+              <div class="petalo" style="--pr:108deg; --pd:.21s"><svg viewBox="-100 -100 200 200"><path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" fill="#9E4180"/></svg></div>
+              <div class="petalo" style="--pr:180deg; --pd:.32s"><svg viewBox="-100 -100 200 200"><path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" fill="#9E4180"/></svg></div>
+              <div class="petalo" style="--pr:252deg; --pd:.43s"><svg viewBox="-100 -100 200 200"><path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" fill="#9E4180"/></svg></div>
+              <div class="petalo" style="--pr:324deg; --pd:.54s"><svg viewBox="-100 -100 200 200"><path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" fill="#9E4180"/></svg></div>
+            </div>
+            <div class="capa adelante">
+              <div class="petalo" style="--pr:0deg;   --pd:.68s"><svg viewBox="-100 -100 200 200"><path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" fill="#FF9EC6"/><path d="M0 -20 C 15 -34 12 -56 3 -74 C -3 -60 -11 -38 0 -20 Z" fill="#FFFFFF" opacity=".32"/></svg></div>
+              <div class="petalo" style="--pr:72deg;  --pd:.80s"><svg viewBox="-100 -100 200 200"><path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" fill="#FF9EC6"/><path d="M0 -20 C 15 -34 12 -56 3 -74 C -3 -60 -11 -38 0 -20 Z" fill="#FFFFFF" opacity=".32"/></svg></div>
+              <div class="petalo" style="--pr:144deg; --pd:.92s"><svg viewBox="-100 -100 200 200"><path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" fill="#FF9EC6"/><path d="M0 -20 C 15 -34 12 -56 3 -74 C -3 -60 -11 -38 0 -20 Z" fill="#FFFFFF" opacity=".32"/></svg></div>
+              <div class="petalo" style="--pr:216deg; --pd:1.04s"><svg viewBox="-100 -100 200 200"><path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" fill="#FF9EC6"/><path d="M0 -20 C 15 -34 12 -56 3 -74 C -3 -60 -11 -38 0 -20 Z" fill="#FFFFFF" opacity=".32"/></svg></div>
+              <div class="petalo" style="--pr:288deg; --pd:1.16s"><svg viewBox="-100 -100 200 200"><path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" fill="#FF9EC6"/><path d="M0 -20 C 15 -34 12 -56 3 -74 C -3 -60 -11 -38 0 -20 Z" fill="#FFFFFF" opacity=".32"/></svg></div>
+            </div>
+            <div class="capa interior">
+              <div class="petalo" style="--pr:36deg;  --pd:1.30s"><svg viewBox="-100 -100 200 200"><path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" fill="#FFC9E0"/></svg></div>
+              <div class="petalo" style="--pr:108deg; --pd:1.39s"><svg viewBox="-100 -100 200 200"><path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" fill="#FFC9E0"/></svg></div>
+              <div class="petalo" style="--pr:180deg; --pd:1.48s"><svg viewBox="-100 -100 200 200"><path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" fill="#FFC9E0"/></svg></div>
+              <div class="petalo" style="--pr:252deg; --pd:1.57s"><svg viewBox="-100 -100 200 200"><path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" fill="#FFC9E0"/></svg></div>
+              <div class="petalo" style="--pr:324deg; --pd:1.66s"><svg viewBox="-100 -100 200 200"><path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" fill="#FFC9E0"/></svg></div>
+            </div>
+            <svg class="nucleo" viewBox="-100 -100 200 200"><circle cx="0" cy="0" r="15" fill="#FFD9EA"/><circle cx="-5" cy="-6" r="5" fill="#FFFFFF" opacity=".9"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="marca">Bloom</div>
     <div class="lema">Tu compañía diaria</div>
     <div class="regla" aria-hidden="true"></div>
@@ -49,60 +67,120 @@
       <label for="welcomeNombre">¿Cómo te llamas?</label>
       <input type="text" id="welcomeNombre" placeholder="Tu nombre" autocomplete="given-name" maxlength="30" enterkeyhint="go">
     </div>
-    <button class="btn-w" id="welcomeBtn">Entrar 🌸</button>
+    <button class="btn-w" id="welcomeBtn">
+      <span class="anillo-c" aria-hidden="true"></span>
+      <span class="cara"><span id="welcomeBtnTx">Entrar 🌸</span><span class="brillo" aria-hidden="true"></span></span>
+    </button>
     <div class="pie-w">Un espacio para florecer, un día a la vez</div>
   </div>
+
+  <div id="wBurst" aria-hidden="true">
+    <div class="anillo-x a1"></div>
+    <div class="anillo-x a2"></div>
+    <div class="anillo-x a3"></div>
+    <div class="centro-b">
+      <div class="vuelo" style="--ba:0deg"><svg viewBox="-100 -100 200 200"><path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" fill="#FF9EC6"/></svg></div>
+      <div class="vuelo" style="--ba:36deg"><svg viewBox="-100 -100 200 200"><path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" fill="#FF9EC6"/></svg></div>
+      <div class="vuelo" style="--ba:72deg"><svg viewBox="-100 -100 200 200"><path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" fill="#FF9EC6"/></svg></div>
+      <div class="vuelo" style="--ba:108deg"><svg viewBox="-100 -100 200 200"><path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" fill="#FF9EC6"/></svg></div>
+      <div class="vuelo" style="--ba:144deg"><svg viewBox="-100 -100 200 200"><path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" fill="#FF9EC6"/></svg></div>
+      <div class="vuelo" style="--ba:180deg"><svg viewBox="-100 -100 200 200"><path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" fill="#FF9EC6"/></svg></div>
+      <div class="vuelo" style="--ba:216deg"><svg viewBox="-100 -100 200 200"><path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" fill="#FF9EC6"/></svg></div>
+      <div class="vuelo" style="--ba:252deg"><svg viewBox="-100 -100 200 200"><path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" fill="#FF9EC6"/></svg></div>
+      <div class="vuelo" style="--ba:288deg"><svg viewBox="-100 -100 200 200"><path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" fill="#FF9EC6"/></svg></div>
+      <div class="vuelo" style="--ba:324deg"><svg viewBox="-100 -100 200 200"><path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" fill="#FF9EC6"/></svg></div>
+      <svg class="nucleo-b" viewBox="-100 -100 200 200"><circle cx="0" cy="0" r="15" fill="#FFD9EA"/></svg>
+    </div>
+    <div class="bienvenida" id="wBienvenida">Bienvenida</div>
+    <div class="abriendo">abriendo tu jardín…</div>
+  </div>
+</div>
+
+<!-- Pétalos ambientales -->
+<div id="petalos" aria-hidden="true">
+  <span></span><span></span><span></span><span></span><span></span><span></span>
+</div>
+<div id="fiestaPetalos" aria-hidden="true">
+  <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
 </div>
 
 <div class="wrap">
   <header class="top">
+    <div class="marca-fila">
+      <div class="marca-mini">
+        <svg viewBox="-100 -100 200 200" width="30" height="30" role="img" aria-label="Bloom">
+          <g class="petalos-mini">
+            <path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" transform="rotate(0)"/>
+            <path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" transform="rotate(72)"/>
+            <path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" transform="rotate(144)"/>
+            <path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" transform="rotate(216)"/>
+            <path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" transform="rotate(288)"/>
+          </g>
+          <circle class="nucleo-mini" cx="0" cy="0" r="17"/>
+        </svg>
+        <span class="nombre-marca">bloom</span>
+      </div>
+      <button id="temaRapido" aria-label="Cambiar tema"><span id="temaRapidoIcono">◐</span></button>
+    </div>
     <div class="fecha" id="fechaHoy">—</div>
-    <h1 class="saludo" id="saludo">Hola</h1>
-    <p class="frase" id="fraseDia">—</p>
+    <h1 class="saludo" id="saludo" tabindex="-1">Hola</h1>
+    <figure class="cita">
+      <span class="comilla" aria-hidden="true">“</span>
+      <blockquote class="frase" id="fraseDia">—</blockquote>
+      <figcaption>bloom ✦ para ti</figcaption>
+    </figure>
   </header>
 
   <!-- ============ VISTA HOY ============ -->
   <section id="view-hoy" role="tabpanel" aria-label="Hoy">
-    <div class="dianav">
-      <button class="flecha" id="diaPrev" aria-label="Día anterior">‹</button>
-      <button class="centro" id="diaCentro" aria-expanded="false" aria-controls="calendario">
-        <span class="cal" aria-hidden="true">📅</span>
-        <span id="diaLabel">Hoy</span>
-        <span class="flechita" aria-hidden="true">▾</span>
-      </button>
-      <button class="flecha" id="diaNext" aria-label="Día siguiente">›</button>
-    </div>
-    <div class="calendario" id="calendario" hidden></div>
-    <button class="volver-hoy" id="btnVolverHoy">↩ Volver a hoy</button>
-    <p class="aviso-pasado" id="avisoPasado">Estás viendo otro día — lo que marques o desmarques se guarda en esa fecha.</p>
+    <section class="semana" aria-label="Tu semana">
+      <div class="semana-cab">
+        <span class="titulo-s">Tu semana</span>
+        <button class="centro" id="diaCentro" aria-expanded="false" aria-controls="calendario">
+          <span id="diaLabel">—</span>
+          <span class="flechita" aria-hidden="true">▾</span>
+        </button>
+      </div>
+      <div class="semana-grid" id="semanaStrip"></div>
+      <div class="calendario" id="calendario" hidden></div>
+      <div class="volver-fila" id="volverFila">
+        <span class="aviso-pasado" id="avisoPasado">Estás viendo otro día — lo que marques se guarda en esa fecha.</span>
+        <button class="volver-hoy" id="btnVolverHoy">↩ volver a hoy</button>
+      </div>
+    </section>
 
-    <div class="resumen">
-      <div class="anillo" aria-hidden="true">
-        <svg width="88" height="88" viewBox="0 0 88 88">
-          <circle class="base" cx="44" cy="44" r="36"></circle>
-          <circle class="val" id="anilloVal" cx="44" cy="44" r="36" stroke-dasharray="226.2" stroke-dashoffset="226.2"></circle>
-        </svg>
-        <div class="pct" id="anilloPct">0%</div>
+    <section class="resumen" aria-label="Progreso del día">
+      <div class="flor-prog" role="img" id="florProgWrap" aria-label="Progreso del día">
+        <svg id="florProgreso" viewBox="-100 -100 200 200" width="128" height="128"></svg>
+        <div class="pct" id="anilloPct" aria-hidden="true">0%</div>
       </div>
       <div class="res-datos">
-        <div class="titulo" id="resumenTitulo">Progreso de hoy</div>
-        <div class="sub" id="resumenSub">0 de 0 puntos</div>
+        <div class="titulo" id="resumenTitulo">Tu día en flor</div>
+        <div class="sub" id="resumenSub">0 de 0 cuidados</div>
         <div class="chips">
-          <span class="chip" id="chipRacha">🔥 0 días</span>
-          <span class="chip" id="chipMeds">💊 0/4</span>
+          <span class="chip" id="chipRacha">racha · 0 días</span>
+          <span class="chip" id="chipMeds">medicamentos · 0/0</span>
         </div>
       </div>
-    </div>
+    </section>
+
     <div class="banner-fiesta" id="bannerFiesta" role="status">
-      ¡Día completo! 🎉
+      <div class="titulo-f">✿ Día completo</div>
       <span class="sub" id="bannerFrase"></span>
     </div>
 
+    <div class="camino-cab">
+      <h2>El camino de hoy</h2>
+      <span class="hilo" aria-hidden="true"></span>
+    </div>
     <div class="timeline" id="timeline"></div>
     <input type="file" id="inFotoComida" accept="image/*" capture="environment" hidden>
 
     <details class="reco">
-      <summary>⭐ Recomendados</summary>
+      <summary>
+        <span class="estrella" aria-hidden="true">✦</span>
+        <span class="t">Recomendados para ti</span>
+      </summary>
       <ul>
         <li>Infusión fría Tosh — frutos tropicales</li>
         <li>Infusión fría Tosh — flor de Jamaica y frambuesa</li>
@@ -112,6 +190,8 @@
         <li>Proteína Gold Standard</li>
       </ul>
     </details>
+
+    <p class="pie-jardin">Un espacio para florecer, un día a la vez ✿</p>
   </section>
 
   <!-- ============ VISTA RECETAS ============ -->
@@ -169,9 +249,9 @@
   <!-- ============ VISTA PROGRESO ============ -->
   <section id="view-progreso" role="tabpanel" aria-label="Progreso" hidden>
     <div class="tiles">
-      <div class="tile"><div class="n" id="tRacha">0</div><div class="l">🔥 Racha</div></div>
-      <div class="tile"><div class="n" id="tMejor">0</div><div class="l">🏆 Mejor</div></div>
-      <div class="tile"><div class="n" id="tPeso">—</div><div class="l">⚖️ Peso kg</div></div>
+      <div class="tile"><div class="n" id="tRacha">0</div><div class="l">✦ Racha</div></div>
+      <div class="tile"><div class="n" id="tMejor">0</div><div class="l">✿ Mejor</div></div>
+      <div class="tile"><div class="n" id="tPeso">—</div><div class="l">Peso kg</div></div>
     </div>
 
     <div class="seccion">
@@ -207,22 +287,22 @@
       <h2>Apariencia</h2>
       <p class="desc">Modo de color de la app.</p>
       <div class="seg" role="group" aria-label="Tema">
-        <button data-tema="auto" aria-pressed="true">🌗 Auto</button>
+        <button data-tema="auto" aria-pressed="true">◐ Auto</button>
         <button data-tema="light" aria-pressed="false">☀️ Día</button>
         <button data-tema="dark" aria-pressed="false">🌙 Noche</button>
       </div>
       <div class="acentos" role="group" aria-label="Color de la app">
-        <button class="sw-color" data-acento="verde" style="--sw:#A9DCC0" aria-label="Menta" aria-pressed="true"></button>
-        <button class="sw-color" data-acento="azul" style="--sw:#AECBEB" aria-label="Cielo" aria-pressed="false"></button>
-        <button class="sw-color" data-acento="indigo" style="--sw:#C3BCEC" aria-label="Lila" aria-pressed="false"></button>
-        <button class="sw-color" data-acento="frambuesa" style="--sw:#F2BCCB" aria-label="Rosa" aria-pressed="false"></button>
-        <button class="sw-color" data-acento="terracota" style="--sw:#F5C8A4" aria-label="Durazno" aria-pressed="false"></button>
-        <button class="sw-color" data-acento="turquesa" style="--sw:#A6DEDC" aria-label="Agua" aria-pressed="false"></button>
+        <button class="sw-color" data-acento="rosa" style="--sw:#F2A9C0" aria-label="Rosa" aria-pressed="true"></button>
+        <button class="sw-color" data-acento="lila" style="--sw:#C9ADE8" aria-label="Lila" aria-pressed="false"></button>
+        <button class="sw-color" data-acento="cielo" style="--sw:#AECBEB" aria-label="Cielo" aria-pressed="false"></button>
+        <button class="sw-color" data-acento="menta" style="--sw:#A9DCC0" aria-label="Menta" aria-pressed="false"></button>
+        <button class="sw-color" data-acento="durazno" style="--sw:#F5C8A4" aria-label="Durazno" aria-pressed="false"></button>
+        <button class="sw-color" data-acento="dorado" style="--sw:#E6C98A" aria-label="Dorado" aria-pressed="false"></button>
         <label class="sw-color sw-custom" data-acento="custom" aria-label="Elegir cualquier color">
-          <input type="color" id="acentoCustom" value="#A9DCC0" aria-label="Selector de color libre">
+          <input type="color" id="acentoCustom" value="#F2A9C0" aria-label="Selector de color libre">
         </label>
       </div>
-      <p class="acento-nombre" id="acentoNombre">Color: Menta</p>
+      <p class="acento-nombre" id="acentoNombre">Color: Rosa</p>
     </div>
 
     <div class="seccion">
@@ -286,10 +366,22 @@
 
 <nav class="tabbar" aria-label="Navegación principal">
   <div class="inner" role="tablist">
-    <button role="tab" aria-selected="true" data-view="hoy"><span class="ic">☀️</span>Hoy</button>
-    <button role="tab" aria-selected="false" data-view="recetas"><span class="ic">🧑‍🍳</span>Recetas</button>
-    <button role="tab" aria-selected="false" data-view="progreso"><span class="ic">📈</span>Progreso</button>
-    <button role="tab" aria-selected="false" data-view="ajustes"><span class="ic">⚙️</span>Ajustes</button>
+    <button role="tab" aria-selected="true" data-view="hoy">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5.3 5.3l1.7 1.7M17 17l1.7 1.7M18.7 5.3L17 7M7 17l-1.7 1.7"/></svg>
+      Hoy
+    </button>
+    <button role="tab" aria-selected="false" data-view="recetas">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10h16"/><path d="M4 10a8 8 0 0 0 16 0"/><path d="M9 10V7.5M15 10V7.5M12 10V6"/></svg>
+      Recetas
+    </button>
+    <button role="tab" aria-selected="false" data-view="progreso">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M5 20V13M12 20V8M19 20V4"/></svg>
+      Progreso
+    </button>
+    <button role="tab" aria-selected="false" data-view="ajustes">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2" fill="var(--card)"/><circle cx="15" cy="12" r="2" fill="var(--card)"/><circle cx="7" cy="17" r="2" fill="var(--card)"/></svg>
+      Ajustes
+    </button>
   </div>
 </nav>
 

@@ -155,7 +155,7 @@ const FELICITACIONES = [
 /* ---------- Estado ---------- */
 const LS_KEY = 'planvital.v1';
 const DEFAULTS = {
-  settings:{ times:{...HORAS_DEF}, notif:false, meta:null, nombre:'', tema:'auto', acento:'verde', acentoHex:null },
+  settings:{ times:{...HORAS_DEF}, notif:false, meta:null, nombre:'', tema:'auto', acento:'rosa', acentoHex:null },
   plan:null,   // null = usa PLAN_SEMILLA
   recetas:[],  // [{id, nombre, bloque, opcion, ing, prep, categoria, origen?}]
   planSembrado:false, // ya se crearon recetas a partir de las opciones del plan
@@ -209,11 +209,15 @@ function diasAtras(dateStr, n){
   d.setUTCDate(d.getUTCDate()-n);
   return d.toISOString().slice(0,10);
 }
-function hora12(hm){
+function hora12Partes(hm){
   const [h,m] = hm.split(':').map(Number);
   const ap = h < 12 ? 'a. m.' : 'p. m.';
   const h12 = h % 12 === 0 ? 12 : h % 12;
-  return `${h12}:${String(m).padStart(2,'0')} ${ap}`;
+  return [`${h12}:${String(m).padStart(2,'0')}`, ap];
+}
+function hora12(hm){
+  const [t, ap] = hora12Partes(hm);
+  return `${t} ${ap}`;
 }
 
 /* ---------- Día visible (calendario) ---------- */
@@ -270,26 +274,39 @@ function aplicarTema(){
   if(t==='auto') delete document.documentElement.dataset.theme;
   else document.documentElement.dataset.theme = t;
   document.querySelectorAll('[data-tema]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tema===t)));
+  const ic = document.getElementById('temaRapidoIcono');
+  if(ic) ic.textContent = t==='auto' ? '◐' : t==='light' ? '☀' : '☾';
 }
 document.querySelectorAll('[data-tema]').forEach(b => {
   b.addEventListener('click', () => { S.settings.tema = b.dataset.tema; save(); aplicarTema(); });
 });
+/* Toggle rápido de tema en la cabecera: auto → día → noche */
+document.getElementById('temaRapido').addEventListener('click', () => {
+  const orden = ['auto','light','dark'];
+  const t = S.settings.tema || 'auto';
+  S.settings.tema = orden[(orden.indexOf(t)+1) % orden.length];
+  save(); aplicarTema();
+  toast(S.settings.tema==='auto' ? '◐ Tema automático' : S.settings.tema==='light' ? '☀ Tema día' : '☾ Tema noche');
+});
 
 /* ---------- Color de la app (acento) ---------- */
 const ACENTOS = [
-  {id:'verde',     nombre:'Menta',   hex:'#A9DCC0'},
-  {id:'azul',      nombre:'Cielo',   hex:'#AECBEB'},
-  {id:'indigo',    nombre:'Lila',    hex:'#C3BCEC'},
-  {id:'frambuesa', nombre:'Rosa',    hex:'#F2BCCB'},
-  {id:'terracota', nombre:'Durazno', hex:'#F5C8A4'},
-  {id:'turquesa',  nombre:'Agua',    hex:'#A6DEDC'}
+  {id:'rosa',    nombre:'Rosa',    hex:'#F2A9C0'},
+  {id:'lila',    nombre:'Lila',    hex:'#C9ADE8'},
+  {id:'cielo',   nombre:'Cielo',   hex:'#AECBEB'},
+  {id:'menta',   nombre:'Menta',   hex:'#A9DCC0'},
+  {id:'durazno', nombre:'Durazno', hex:'#F5C8A4'},
+  {id:'dorado',  nombre:'Dorado',  hex:'#E6C98A'}
 ];
+/* Colores guardados con la paleta anterior de Bloom.
+   'verde' era el default viejo (no una elección): pasa al nuevo default rosa. */
+const ACENTOS_LEGADO = {frambuesa:'rosa', indigo:'lila', azul:'cielo', verde:'rosa', terracota:'durazno', turquesa:'menta'};
 /* Texto oscuro sobre colores claros, blanco sobre colores fuertes */
 function tintaPara(hex){
   const n = parseInt(hex.slice(1), 16);
   const lin = c => { c/=255; return c<=0.04045 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4); };
   const lum = 0.2126*lin(n>>16 & 255) + 0.7152*lin(n>>8 & 255) + 0.0722*lin(n & 255);
-  return lum > 0.35 ? '#2A322C' : '#FFFFFF';
+  return lum > 0.35 ? '#45202F' : '#FFFFFF';
 }
 /* Variante intensa del color elegido: mismo tono, luminosidad fija */
 function hexAHsl(hex){
@@ -311,30 +328,24 @@ function hslAHex(h, s, l){
   const f = n => { const c = l - a * Math.max(-1, Math.min(k(n)-3, Math.min(9-k(n), 1))); return Math.round(c*255).toString(16).padStart(2,'0'); };
   return '#' + f(0) + f(8) + f(4);
 }
-function variante(hex, luz, satMin){
+function variante(hex, luz, satMin, satMax){
   const [h, s, _l] = hexAHsl(hex);
-  return hslAHex(h, Math.max(s, satMin), luz);
+  const s2 = s < 0.05 ? s : Math.min(Math.max(s, satMin), satMax ?? 1); // los grises se quedan grises
+  return hslAHex(h, s2, luz);
 }
 function acentoActual(){
   if(S.settings.acento === 'custom' && /^#[0-9a-fA-F]{6}$/.test(S.settings.acentoHex||''))
     return {id:'custom', nombre:'Personalizado ' + S.settings.acentoHex.toUpperCase(), hex:S.settings.acentoHex};
-  return ACENTOS.find(x => x.id === (S.settings.acento||'verde')) || ACENTOS[0];
+  const id = ACENTOS_LEGADO[S.settings.acento] || S.settings.acento || 'rosa';
+  return ACENTOS.find(x => x.id === id) || ACENTOS[0];
 }
 function aplicarAcento(){
   const a = acentoActual();
   const tinta = tintaPara(a.hex);
-  const fuerteClaro = variante(a.hex, 0.33, 0.30);  // para leer sobre fondos claros
-  const fuerteOscuro = variante(a.hex, 0.72, 0.28); // para leer sobre fondos oscuros
-  /* Timeline en subtonos del color elegido: se profundiza del amanecer a la noche,
-     con un matiz apenas más cálido en la mañana y más frío en la noche */
-  const [h, s] = hexAHsl(a.hex);
-  const sat = s < 0.05 ? s : Math.max(s, 0.28); // los grises se quedan grises
-  const matices = [0.045, 0.02, 0, -0.02, -0.045];
-  const LUZ_DIA = [0.58, 0.51, 0.44, 0.37, 0.30];
-  const LUZ_NOCHE = [0.56, 0.62, 0.68, 0.74, 0.80];
-  const tonos = luces => matices.map((m, i) => hslAHex((h + m + 1) % 1, sat, luces[i]));
-  const bDia = tonos(LUZ_DIA), bNoche = tonos(LUZ_NOCHE);
-  const vars = b => b.map((hex, i) => `--b${i+1}:${hex}`).join('; ');
+  /* El "fuerte" es el mismo tono, profundo y elegante (rosa → frambuesa).
+     La narrativa del día (--b1..--b5) ya no depende del acento: vive en el CSS. */
+  const fuerteClaro = variante(a.hex, 0.46, 0.34, 0.58);  // para leer sobre fondos claros
+  const fuerteOscuro = variante(a.hex, 0.74, 0.30, 0.62); // para leer sobre fondos oscuros
   let el = document.getElementById('acentoStyle');
   if(!el){
     el = document.createElement('style');
@@ -342,8 +353,8 @@ function aplicarAcento(){
     // al final del body para ganar en orden de cascada al estilo principal
     (document.body || document.documentElement).appendChild(el);
   }
-  const claro = `--accent:${a.hex}; --accent-ink:${tinta}; --accent-strong:${fuerteClaro}; ${vars(bDia)}`;
-  const oscuro = `--accent:${a.hex}; --accent-ink:${tinta}; --accent-strong:${fuerteOscuro}; ${vars(bNoche)}`;
+  const claro = `--accent:${a.hex}; --accent-ink:${tinta}; --accent-strong:${fuerteClaro}`;
+  const oscuro = `--accent:${a.hex}; --accent-ink:${tinta}; --accent-strong:${fuerteOscuro}`;
   el.textContent = `
     :root{${claro}}
     @media (prefers-color-scheme: dark){ :root{${oscuro}} }
@@ -381,20 +392,51 @@ function renderCabecera(){
   document.getElementById('fechaHoy').textContent = fechaBonita(date);
   const h = +hm.split(':')[0];
   const saludo = h<12 ? 'Buenos días' : h<18 ? 'Buenas tardes' : 'Buenas noches';
-  const nom = S.settings.nombre ? `, ${S.settings.nombre}` : '';
-  document.getElementById('saludo').textContent = `${saludo}${nom} 🌸`;
-  document.getElementById('fraseDia').textContent = '“' + fraseDelDia(date) + '”';
+  const el = document.getElementById('saludo');
+  if(S.settings.nombre) el.innerHTML = `${saludo},<em>${esc(S.settings.nombre)}</em>`;
+  else el.textContent = `${saludo} 🌸`;
+  document.getElementById('fraseDia').textContent = fraseDelDia(date);
 }
 
-/* ---------- Navegador de días ---------- */
+/* ---------- Tu semana (tira de días) + navegador ---------- */
+function renderSemana(){
+  const hoy = bogota().date;
+  const base = new Date(viewDate + 'T12:00:00Z');
+  const dow = (base.getUTCDay()+6) % 7; // lunes = 0
+  const letras = ['L','M','X','J','V','S','D'];
+  let html = '';
+  for(let i=0; i<7; i++){
+    const d = new Date(base); d.setUTCDate(d.getUTCDate() + (i - dow));
+    const f = d.toISOString().slice(0,10);
+    const futuro = f > hoy;
+    const clases = ['dia-pill'];
+    if(f === hoy) clases.push('hoy');
+    if(f === viewDate && f !== hoy) clases.push('sel');
+    if(!futuro && statsDe(f).cumplido) clases.push('racha');
+    html += `<button class="${clases.join(' ')}" data-dia="${f}" ${futuro?'disabled':''} aria-label="${fechaBonita(f)}"${f===viewDate?' aria-current="date"':''}>
+      <span class="letra">${letras[i]}</span>
+      <span class="num">${d.getUTCDate()}</span>
+      <span class="puntito" aria-hidden="true"></span>
+    </button>`;
+  }
+  const strip = document.getElementById('semanaStrip');
+  // El re-render destruye el botón enfocado: recordar y devolver el foco (navegación por teclado)
+  const focoDia = document.activeElement && strip.contains(document.activeElement) ? document.activeElement.dataset.dia : null;
+  strip.innerHTML = html;
+  strip.querySelectorAll('[data-dia]').forEach(b => b.addEventListener('click', () => irADia(b.dataset.dia)));
+  if(focoDia){
+    const de = strip.querySelector(`[data-dia="${CSS.escape(focoDia)}"]:not(:disabled)`) || strip.querySelector('[aria-current]');
+    if(de) de.focus();
+  }
+}
 function renderDiaNav(){
   const hoy = bogota().date;
   const esHoy = viewDate === hoy;
-  document.getElementById('diaLabel').textContent = esHoy ? `Hoy · ${fechaCorta(viewDate)}` : fechaBonita(viewDate);
-  document.getElementById('diaNext').disabled = esHoy;
-  document.getElementById('btnVolverHoy').classList.toggle('on', !esHoy);
-  document.getElementById('avisoPasado').classList.toggle('on', !esHoy);
-  document.getElementById('resumenTitulo').textContent = esHoy ? 'Progreso de hoy' : 'Progreso del día';
+  const mes = new Date(viewDate+'T12:00:00-05:00').toLocaleDateString('es-CO', {timeZone:'America/Bogota', month:'long', year:'numeric'});
+  document.getElementById('diaLabel').textContent = mes;
+  document.getElementById('volverFila').classList.toggle('on', !esHoy);
+  document.getElementById('resumenTitulo').textContent = esHoy ? 'Tu día en flor' : 'Ese día en flor';
+  renderSemana();
 }
 function irADia(dateStr){
   const hoy = bogota().date;
@@ -404,8 +446,6 @@ function irADia(dateStr){
   renderTimeline();
   if(!document.getElementById('calendario').hidden){ calMes = viewDate.slice(0,7); renderCalendario(); }
 }
-document.getElementById('diaPrev').addEventListener('click', ()=> irADia(diasAtras(viewDate,1)));
-document.getElementById('diaNext').addEventListener('click', ()=> irADia(diasAtras(viewDate,-1)));
 document.getElementById('btnVolverHoy').addEventListener('click', ()=> irADia(bogota().date));
 
 /* ---------- Calendario desplegable con días de racha ---------- */
@@ -418,7 +458,9 @@ function toggleCalendario(){
   const cal = document.getElementById('calendario');
   const abierto = !cal.hidden;
   if(abierto){
+    const teniaFoco = cal.contains(document.activeElement);
     cal.hidden = true;
+    if(teniaFoco || document.activeElement === document.body) document.getElementById('diaCentro').focus();
   } else {
     calMes = viewDate.slice(0,7);
     renderCalendario();
@@ -459,6 +501,10 @@ function renderCalendario(){
     <span class="cal-racha">🔥 ${r.actual} ${r.actual===1?'día':'días'}</span>
   </div>`;
   const cal = document.getElementById('calendario');
+  // El re-render destruye el botón enfocado: recordar y devolver el foco (navegación por teclado)
+  const act = document.activeElement;
+  const focoNav = cal.contains(act) && (act.id === 'calPrev' || act.id === 'calNext') ? act.id : null;
+  const focoDia = cal.contains(act) ? act.dataset.caldia : null;
   cal.innerHTML = html;
   document.getElementById('calPrev').addEventListener('click', () => { calMes = mesVecino(calMes, -1); renderCalendario(); });
   document.getElementById('calNext').addEventListener('click', () => { calMes = mesVecino(calMes, 1); renderCalendario(); });
@@ -466,17 +512,25 @@ function renderCalendario(){
     irADia(b.dataset.caldia);
     toggleCalendario();
   }));
+  if(focoNav){
+    const bn = document.getElementById(focoNav);
+    if(bn && !bn.disabled) bn.focus(); else document.getElementById('calPrev').focus();
+  } else if(focoDia){
+    const bd = cal.querySelector(`[data-caldia="${CSS.escape(focoDia)}"]:not(:disabled)`) || cal.querySelector('.cal-dia.sel') || cal.querySelector('.cal-dia:not(:disabled)');
+    if(bd) bd.focus();
+  }
 }
 
 /* ---------- Render: timeline ---------- */
+const TICK_SVG = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5 L10 18 L19.5 6.5"/></svg>';
 function itemHTML(it, tipo, bloqueId, checked){
   const clase = tipo==='med' ? 'item med' : it.omega ? 'item omega' : 'item';
   const eyebrow = tipo==='med' ? '<span class="eyebrow">Medicamento</span>' : it.omega ? '<span class="eyebrow">Suplemento diario</span>' : '';
   return `<label class="${clase}">
     <input type="checkbox" data-item="${esc(it.id)}" data-bloque="${esc(bloqueId)}" ${checked?'checked':''}>
-    <span class="caja" aria-hidden="true"></span>
-    <span class="em" aria-hidden="true">${esc(it.em||'•')}</span>
+    <span class="ficha" aria-hidden="true">${esc(it.em||'•')}</span>
     <span class="tx">${eyebrow}<span class="lb">${esc(it.lb)}</span>${it.dt?`<span class="dt">${esc(it.dt)}</span>`:''}</span>
+    <span class="caja" aria-hidden="true">${TICK_SVG}</span>
   </label>`;
 }
 /* Chips de recetas propias de un bloque, por categoría (comida | bebida).
@@ -502,20 +556,21 @@ function renderTimeline(){
   const P = plan();
   let html = '';
   P.forEach((b, i) => {
-    const next = P[i+1];
     const hm = horaDe(b.id);
+    const [horaTx, ampmTx] = hora12Partes(hm);
     let inner = '';
     for(const f of b.fijos) inner += itemHTML(f, f.omega?'omega':'fijo', b.id, !!d.checks[f.id]);
     for(const m of b.meds) inner += itemHTML(m, 'med', b.id, !!d.checks[m.id]);
-    if(b.nota) inner += `<div class="nota">${escNota(b.nota)}</div>`;
+    if(b.nota) inner += `<div class="nota"><span class="nota-t">Nota de tu plan</span><span class="nota-tx">${escNota(b.nota)}</span></div>`;
     if(b.opciones && b.opciones.length){
-      inner += `<fieldset><legend class="grupo-titulo">Elige 1 opción</legend>`;
+      inner += `<fieldset><legend class="grupo-titulo">Elige una opción</legend>`;
       b.opciones.forEach((o, oi) => {
-        inner += `<label class="item">
+        inner += `<label class="item opcion">
           <input type="radio" name="opt-${esc(b.id)}" data-opt="${oi}" data-bloque="${esc(b.id)}" ${d.opts[b.id]===oi?'checked':''}>
-          <span class="caja" aria-hidden="true"></span>
-          <span class="em" aria-hidden="true">${esc(o.em||'•')}</span>
+          <span class="ficha" aria-hidden="true">${esc(o.em||'•')}</span>
           <span class="tx"><span class="lb">${esc(o.lb)}</span>${o.dt?`<span class="dt">${esc(o.dt)}</span>`:''}</span>
+          <span class="tag" aria-hidden="true">elegida</span>
+          <span class="caja" aria-hidden="true"><span class="punto-r"></span></span>
         </label>`;
       });
       inner += `</fieldset>`;
@@ -529,13 +584,14 @@ function renderTimeline(){
     if((b.opciones && b.opciones.length) || b.extra){
       inner += chipsRecetaHTML(b.id, 'bebida', d, true);
     }
-    html += `<article class="bloque" id="bloque-${esc(b.id)}" style="--bc:var(${colorDe(i)}); --bc-next:var(${next?colorDe(i+1):colorDe(i)})">
-      <span class="punto" aria-hidden="true"></span>
+    html += `<article class="bloque" id="bloque-${esc(b.id)}" style="--bc:var(${colorDe(i)}); --d:${i*70}ms">
+      <span class="nodo" aria-hidden="true"></span>
       <div class="b-cab">
-        <span class="b-hora" data-hora="${esc(b.id)}">${hora12(hm)}</span>
+        <span class="b-hora" data-hora="${esc(b.id)}">${horaTx}</span>
+        <span class="b-ampm" data-ampm="${esc(b.id)}">${ampmTx}</span>
         <span class="b-nombre">${esc(b.emoji||'')} ${esc(b.nombre)}</span>
-        <span class="chip-ahora">Ahora</span>
-        ${b.opciones && b.opciones.length ? `<button class="b-foto" data-fotocomida="${esc(b.id)}" aria-label="Añadir foto de ${esc(b.nombre)}" title="Añadir foto de lo que comí">📷</button>` : ''}
+        <span class="chip-ahora">ahora</span>
+        ${b.opciones && b.opciones.length ? `<button class="b-foto" data-fotocomida="${esc(b.id)}" aria-label="Añadir foto de ${esc(b.nombre)}" title="Añadir foto de lo que comí"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="3"/><circle cx="12" cy="13" r="3.5"/><rect x="9" y="4" width="6" height="3" rx="1"/></svg></button>` : ''}
       </div>
       <div class="b-card">${inner}<div class="fotos-comida" data-fotoscomida="${esc(b.id)}" hidden></div></div>
     </article>`;
@@ -546,34 +602,51 @@ function renderTimeline(){
   pintarFotosComidas();
 }
 
-/* Conteo por bloque, anillo, chips, banner */
+/* Conteo por bloque, flor de progreso, chips, banner */
 function actualizarDerivados(){
   const d = dayData(viewDate);
   const st = statsDe(viewDate);
-  plan().forEach(b => {
+  const P = plan();
+  const petalos = [];
+  P.forEach(b => {
     let t=0, h=0;
     for(const f of b.fijos){ t++; if(d.checks[f.id]) h++; }
     for(const m of b.meds){ t++; if(d.checks[m.id]) h++; }
     if(b.opciones && b.opciones.length){ t++; if(d.opts[b.id]!=null) h++; }
     const art = document.getElementById(`bloque-${b.id}`);
     if(art) art.classList.toggle('hecho', t>0 && h===t);
+    petalos.push(t===0 ? .2 : h===t ? 1 : h>0 ? .55 : .2);
   });
-  const C = 2*Math.PI*36;
-  document.getElementById('anilloVal').style.strokeDashoffset = String(C * (1 - st.hechos/Math.max(st.total,1)));
+  // Flor de progreso: un pétalo por momento del día, que se enciende al completarlo
+  const flor = document.getElementById('florProgreso');
+  const n = Math.max(P.length, 1);
+  let petHTML = '';
+  P.forEach((b, i) => {
+    petHTML += `<path d="M0 0 C 31 -18 23 -60 3 -85 C -12 -66 -25 -28 0 0 Z" transform="rotate(${Math.round(i*360/n)})" fill="var(${colorDe(i)})" opacity="${petalos[i]}"/>`;
+  });
+  petHTML += `<circle cx="0" cy="0" r="30" fill="var(--card)" stroke="var(--line)" stroke-width="2"/>`;
+  flor.innerHTML = petHTML;
   document.getElementById('anilloPct').textContent = st.pct + '%';
-  document.getElementById('resumenSub').textContent = `${st.hechos} de ${st.total} puntos del plan`;
+  document.getElementById('florProgWrap').setAttribute('aria-label', `Progreso: ${st.pct} por ciento`);
+  document.getElementById('resumenSub').textContent = `${st.hechos} de ${st.total} cuidados · cada pétalo es un momento del día`;
   const r = rachas();
-  document.getElementById('chipRacha').textContent = `🔥 ${r.actual} ${r.actual===1?'día':'días'}`;
+  document.getElementById('chipRacha').textContent = `racha · ${r.actual} ${r.actual===1?'día':'días'}`;
   const chipM = document.getElementById('chipMeds');
-  chipM.textContent = `💊 ${st.medsH}/${st.medsT}`;
+  chipM.textContent = `medicamentos · ${st.medsH}/${st.medsT}`;
   chipM.classList.toggle('ok', st.medsT>0 && st.medsH===st.medsT);
   const banner = document.getElementById('bannerFiesta');
+  const fiesta = document.getElementById('fiestaPetalos');
   if(st.perfecto){
     if(!banner.classList.contains('on')){
       document.getElementById('bannerFrase').textContent = FELICITACIONES[Math.floor(Math.random()*FELICITACIONES.length)];
       banner.classList.add('on');
     }
-  } else banner.classList.remove('on');
+    fiesta.classList.add('on');
+  } else {
+    banner.classList.remove('on');
+    fiesta.classList.remove('on');
+  }
+  renderSemana(); // los puntitos de racha de la tira semanal
 }
 
 /* Bloque actual según hora de Bogotá — solo al ver el día de hoy */
@@ -606,6 +679,20 @@ const radioPrev = new WeakMap();
 document.getElementById('timeline').addEventListener('pointerdown', e => {
   const r = e.target.closest('label.item')?.querySelector('input[type=radio][data-opt]');
   if(r) radioPrev.set(r, r.checked);
+});
+/* Con teclado también se puede quitar la opción elegida (Espacio/Enter sobre el radio marcado) */
+document.getElementById('timeline').addEventListener('keydown', e => {
+  if(e.key !== ' ' && e.key !== 'Enter') return;
+  const radio = e.target;
+  if(radio.matches && radio.matches('input[type=radio][data-opt]') && radio.checked){
+    e.preventDefault();
+    radio.checked = false;
+    const d = dayData(viewDate);
+    delete d.opts[radio.dataset.bloque];
+    save();
+    actualizarDerivados();
+    toast('Opción quitada');
+  }
 });
 document.getElementById('timeline').addEventListener('click', e => {
   const vf = e.target.closest('[data-verfoto]');
@@ -655,11 +742,11 @@ async function verFotoComida(fid){
   const b = plan().find(x => x.id === f.bloque);
   document.getElementById('visorImg').src = f.data;
   document.getElementById('visorFecha').textContent = `${b ? b.nombre + ' · ' : ''}${fechaBonita(f.d)}`;
-  document.getElementById('visorFoto').classList.add('on');
+  abrirOverlay(document.getElementById('visorFoto'), '#visorCerrar');
   document.getElementById('visorBorrar').onclick = () => {
     confirmar('¿Eliminar foto?', 'Se eliminará esta foto de tu comida.', async () => {
       await storeDel('comidafotos', f.id);
-      document.getElementById('visorFoto').classList.remove('on');
+      cerrarOverlay(document.getElementById('visorFoto'));
       pintarFotosComidas();
       toast('Foto eliminada');
     });
@@ -707,11 +794,11 @@ async function abrirRecetaSheet(rid, bid, cat){
   document.getElementById('rsElegir').textContent = mapaDia(d, cat)[bid]===rid ? '✕ Quitar de este día' : '✓ Elegir para este día';
   const img = document.getElementById('rsFoto');
   img.hidden = true;
-  document.getElementById('recetaSheet').classList.add('on');
+  abrirOverlay(document.getElementById('recetaSheet'), '#rsCerrar');
   const foto = await recFotoGet(rid);
   if(foto && sheetActual && sheetActual.rid===rid){ img.src = foto.data; img.hidden = false; }
 }
-function cerrarRecetaSheet(){ document.getElementById('recetaSheet').classList.remove('on'); sheetActual = null; }
+function cerrarRecetaSheet(){ cerrarOverlay(document.getElementById('recetaSheet')); sheetActual = null; }
 document.getElementById('rsCerrar').addEventListener('click', cerrarRecetaSheet);
 document.getElementById('recetaSheet').addEventListener('click', e => { if(e.target.id==='recetaSheet') cerrarRecetaSheet(); });
 document.getElementById('rsElegir').addEventListener('click', () => {
@@ -754,15 +841,37 @@ function toast(msg){
   clearTimeout(toastTimer);
   toastTimer = setTimeout(()=>t.classList.remove('on'), 2200);
 }
+/* Overlays con gestión de foco: al abrir, foco al diálogo; al cerrar, vuelve a donde estaba */
+function abrirOverlay(el, focoSel){
+  el._focoPrevio = document.activeElement;
+  el.classList.add('on');
+  const f = focoSel ? el.querySelector(focoSel) : null;
+  if(f) f.focus();
+}
+function cerrarOverlay(el){
+  el.classList.remove('on');
+  if(el._focoPrevio && document.contains(el._focoPrevio) && el._focoPrevio.focus) el._focoPrevio.focus();
+  el._focoPrevio = null;
+}
 let modalCb = null;
 function confirmar(titulo, texto, cb){
   document.getElementById('modalTitulo').textContent = titulo;
   document.getElementById('modalTexto').textContent = texto;
   modalCb = cb;
-  document.getElementById('modal').classList.add('on');
+  abrirOverlay(document.getElementById('modal'), '#modalNo');
 }
-document.getElementById('modalNo').addEventListener('click', ()=>{ modalCb=null; document.getElementById('modal').classList.remove('on'); });
-document.getElementById('modalSi').addEventListener('click', ()=>{ const cb=modalCb; modalCb=null; document.getElementById('modal').classList.remove('on'); if(cb) cb(); });
+document.getElementById('modalNo').addEventListener('click', ()=>{ modalCb=null; cerrarOverlay(document.getElementById('modal')); });
+document.getElementById('modalSi').addEventListener('click', ()=>{ const cb=modalCb; modalCb=null; cerrarOverlay(document.getElementById('modal')); if(cb) cb(); });
+/* Escape cierra el overlay superior (modal > visor > hoja de receta) */
+document.addEventListener('keydown', e => {
+  if(e.key !== 'Escape') return;
+  const modal = document.getElementById('modal');
+  const visor = document.getElementById('visorFoto');
+  const sheet = document.getElementById('recetaSheet');
+  if(modal.classList.contains('on')) document.getElementById('modalNo').click();
+  else if(visor.classList.contains('on')) cerrarOverlay(visor);
+  else if(sheet.classList.contains('on')) cerrarRecetaSheet();
+});
 
 /* ---------- RECETAS ---------- */
 let recEditando = null; // id de receta en edición, o null
@@ -1069,7 +1178,7 @@ function renderChart(pesos){
   let puntos='';
   datos.forEach((p,i)=>{
     const fin = i===datos.length-1;
-    puntos += `<circle cx="${X(i).toFixed(1)}" cy="${Y(p.kg).toFixed(1)}" r="${fin?5:4}" fill="var(--accent-strong)" stroke="var(--card)" stroke-width="2" data-i="${i}" style="cursor:pointer"/>`;
+    puntos += `<circle cx="${X(i).toFixed(1)}" cy="${Y(p.kg).toFixed(1)}" r="${fin?5:4}" fill="var(--accent-strong)" stroke="var(--card)" stroke-width="2" data-i="${i}" style="cursor:pointer" tabindex="0" role="button" aria-label="${esc(fechaCorta(p.d))}: ${p.kg.toFixed(1)} kilogramos"/>`;
     if(fin) puntos += `<text x="${X(i).toFixed(1)}" y="${Y(p.kg)-10}" text-anchor="middle" font-size="10" font-weight="700" font-family="var(--f-mono)" fill="var(--ink)">${p.kg.toFixed(1)}</text>`;
   });
   const ejeX = `<text x="${mL}" y="${H-8}" font-size="9" font-family="var(--f-mono)" fill="var(--ink-3)">${fechaCorta(datos[0].d)}</text>
@@ -1081,7 +1190,7 @@ function renderChart(pesos){
     ${puntos}${ejeX}
   </svg>`;
   cont.querySelectorAll('circle').forEach(c => {
-    c.addEventListener('click', ev => {
+    const mostrarTip = ev => {
       const p = datos[+c.dataset.i];
       const tip = document.getElementById('chartTip');
       const rect = cont.getBoundingClientRect();
@@ -1092,7 +1201,9 @@ function renderChart(pesos){
       tip.style.display='block';
       setTimeout(()=>tip.style.display='none', 2500);
       ev.stopPropagation();
-    });
+    };
+    c.addEventListener('click', mostrarTip);
+    c.addEventListener('keydown', ev => { if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); mostrarTip(ev); } });
   });
 }
 
@@ -1204,18 +1315,18 @@ async function renderFotos(){
       if(!f) return;
       document.getElementById('visorImg').src = f.data;
       document.getElementById('visorFecha').textContent = fechaBonita(f.d);
-      document.getElementById('visorFoto').classList.add('on');
+      abrirOverlay(document.getElementById('visorFoto'), '#visorCerrar');
       document.getElementById('visorBorrar').onclick = () => {
         confirmar('¿Eliminar foto?', 'Se eliminará esta foto de progreso de forma permanente.', async () => {
           await fotoDel(f.id);
-          document.getElementById('visorFoto').classList.remove('on');
+          cerrarOverlay(document.getElementById('visorFoto'));
           renderFotos(); toast('Foto eliminada');
         });
       };
     });
   });
 }
-document.getElementById('visorCerrar').addEventListener('click', ()=>document.getElementById('visorFoto').classList.remove('on'));
+document.getElementById('visorCerrar').addEventListener('click', ()=>cerrarOverlay(document.getElementById('visorFoto')));
 document.getElementById('inFoto').addEventListener('change', e => {
   const file = e.target.files[0];
   e.target.value='';
@@ -1242,8 +1353,11 @@ function renderAjustes(){
       if(!e.target.value) return;
       S.settings.times[inp.dataset.time] = e.target.value;
       save();
+      const [horaTx, ampmTx] = hora12Partes(e.target.value);
       const el = document.querySelector(`[data-hora="${CSS.escape(inp.dataset.time)}"]`);
-      if(el) el.textContent = hora12(e.target.value);
+      if(el) el.textContent = horaTx;
+      const el2 = document.querySelector(`[data-ampm="${CSS.escape(inp.dataset.time)}"]`);
+      if(el2) el2.textContent = ampmTx;
       marcarBloqueActual();
       toast('Horario actualizado');
     });
@@ -1420,13 +1534,13 @@ renderCabecera();
 renderDiaNav();
 renderTimeline();
 
-/* ---------- Pantalla de bienvenida (login) ---------- */
+/* ---------- Pantalla de bienvenida (login · jardín nocturno) ---------- */
 (function iniciarWelcome(){
   const wel = document.getElementById('welcome');
   const btn = document.getElementById('welcomeBtn');
+  const btnTx = document.getElementById('welcomeBtnTx');
   const campo = document.getElementById('welcomeCampo');
   const input = document.getElementById('welcomeNombre');
-  const flor = document.getElementById('florW');
   const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // Saludo según hora + si ya sabemos su nombre
@@ -1434,25 +1548,63 @@ renderTimeline();
   const momento = h<12 ? 'Buenos días' : h<18 ? 'Buenas tardes' : 'Buenas noches';
   if(S.settings.nombre){
     document.getElementById('welcomeSaludo').textContent = `${momento}, ${S.settings.nombre} 🌸`;
-    btn.textContent = 'Entrar 🌸';
+    btnTx.textContent = 'Entrar 🌸';
   } else {
     document.getElementById('welcomeSaludo').textContent = 'Hola, bienvenida 🌸';
     campo.hidden = false;
-    btn.textContent = 'Comenzar 🌸';
+    btnTx.textContent = 'Comenzar 🌸';
   }
   document.getElementById('welcomeFrase').textContent = '“' + fraseDelDia(bogota().date) + '”';
-  if(!reduce) flor.classList.add('viva');
 
-  // Lluvia de pétalos en canvas
+  // Cielo del jardín: estrellas que titilan y luciérnagas
+  if(!reduce){
+    const est = document.getElementById('wEstrellas');
+    const colsE = ['#FFD9EC','#E7C1FF','#FFC9E5','#FFE9F3'];
+    let hE = '';
+    for(let i=0; i<26; i++){
+      const c = colsE[(Math.random()*colsE.length)|0];
+      const s = (2 + Math.random()*2.4).toFixed(1);
+      hE += `<span class="estrella" style="left:${(Math.random()*94+3).toFixed(0)}%; top:${(Math.random()*94+3).toFixed(0)}%; width:${s}px; height:${s}px; background:${c}; box-shadow:0 0 7px ${c}; --dur:${(2+Math.random()*3.4).toFixed(1)}s; --del:${(Math.random()*4).toFixed(1)}s"></span>`;
+    }
+    est.innerHTML = hE;
+    const luci = document.getElementById('wLuci');
+    const colsL = ['#FFD1A6','#FF9EC6','#E7C1FF'];
+    let hL = '';
+    for(let i=0; i<6; i++){
+      const c = colsL[(Math.random()*colsL.length)|0];
+      const s = (3 + Math.random()*2.6).toFixed(1);
+      const anim = Math.random() > .5 ? 'firefly-a' : 'firefly-b';
+      hL += `<span class="luci" style="left:${(Math.random()*86+6).toFixed(0)}%; top:${(Math.random()*80+8).toFixed(0)}%; animation:${anim} ${(11+Math.random()*9).toFixed(1)}s ease-in-out ${(-(Math.random()*12)).toFixed(1)}s infinite"><span style="width:${s}px; height:${s}px; background:${c}; box-shadow:0 0 12px 3px ${c}; --tw:${(1.8+Math.random()*2).toFixed(1)}s"></span></span>`;
+    }
+    luci.innerHTML = hL;
+  }
+
+  // La flor sigue el dedo/cursor (parallax 3D suave)
+  const florEl = document.getElementById('wFlor');
+  let tx = 0, ty = 0, cx = 0, cy = 0, rafFlor = null;
+  wel.addEventListener('pointermove', e => {
+    const b = wel.getBoundingClientRect();
+    tx = (e.clientX - b.left) / b.width - .5;
+    ty = (e.clientY - b.top) / b.height - .5;
+  });
+  wel.addEventListener('pointerleave', () => { tx = 0; ty = 0; });
+  if(!reduce){
+    const paso = () => {
+      cx += (tx - cx) * .07;
+      cy += (ty - cy) * .07;
+      florEl.style.transform = `rotateY(${(cx*22).toFixed(2)}deg) rotateX(${(-cy*16).toFixed(2)}deg)`;
+      rafFlor = requestAnimationFrame(paso);
+    };
+    rafFlor = requestAnimationFrame(paso);
+  }
+
+  // Lluvia de pétalos en canvas (paleta fija del jardín nocturno)
   let raf = null, corriendo = true;
   if(!reduce){
     const cv = document.getElementById('welcomeCanvas');
     const ctx = cv.getContext('2d');
     let W, H, dpr, petalos = [];
-    const acc = getComputedStyle(document.documentElement);
-    const c1 = acc.getPropertyValue('--accent').trim() || '#F2BCCB';
-    const c2 = acc.getPropertyValue('--accent-strong').trim() || '#C97';
-    const colores = [c1, c2, c1];
+    const colores = ['#FF9EC6','#E48BD2','#C77DFF','#FFB8D4'];
     function medir(){
       dpr = Math.min(2, window.devicePixelRatio || 1);
       W = wel.clientWidth; H = wel.clientHeight;
@@ -1464,7 +1616,7 @@ renderTimeline();
         s:6+Math.random()*8, vel:.25+Math.random()*.55,
         rot:Math.random()*Math.PI*2, vr:(Math.random()-.5)*.03,
         amp:12+Math.random()*22, fase:Math.random()*Math.PI*2, vf:.006+Math.random()*.01,
-        col:colores[(Math.random()*colores.length)|0], alpha:.28+Math.random()*.32};
+        col:colores[(Math.random()*colores.length)|0], alpha:.22+Math.random()*.3};
     }
     medir();
     petalos = Array.from({length:22}, () => nuevo());
@@ -1484,19 +1636,43 @@ renderTimeline();
     }
     frame();
     window.addEventListener('resize', medir);
-    wel._detener = () => { corriendo = false; if(raf) cancelAnimationFrame(raf); };
+    wel._detener = () => { corriendo = false; if(raf) cancelAnimationFrame(raf); if(rafFlor) cancelAnimationFrame(rafFlor); };
   }
 
+  let entrando = false;
   function entrar(){
+    if(entrando) return;
+    entrando = true;
+    let nombre = S.settings.nombre;
     if(!campo.hidden){
       const nom = input.value.trim();
-      if(nom){ S.settings.nombre = nom; save(); renderCabecera(); }
+      if(nom){ nombre = nom; S.settings.nombre = nom; save(); renderCabecera(); }
     }
-    wel.classList.add('oculto');
-    if(wel._detener) setTimeout(wel._detener, 600);
+    // Estallido de pétalos + bienvenida con su nombre
+    document.getElementById('wBienvenida').textContent = nombre ? `Bienvenida, ${nombre}` : 'Bienvenida';
+    document.getElementById('wBurst').classList.add('on');
+    setTimeout(() => {
+      wel.classList.add('oculto');
+      // Traspasar el foco a la app: sin esto queda "en la nada" tras ocultar el dialog
+      const s = document.getElementById('saludo');
+      if(s) s.focus();
+      if(wel._detener) setTimeout(wel._detener, 600);
+    }, reduce ? 150 : 1900);
   }
   btn.addEventListener('click', entrar);
   input.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); entrar(); } });
+  // Trampa de foco: mientras la bienvenida esté abierta, Tab no escapa hacia la app tapada
+  wel.addEventListener('keydown', e => {
+    if(e.key !== 'Tab' || wel.classList.contains('oculto')) return;
+    const focables = [input, btn].filter(el => !el.closest('[hidden]'));
+    if(!focables.length) return;
+    const primero = focables[0], ultimo = focables[focables.length-1];
+    if(e.shiftKey && (document.activeElement === primero || !wel.contains(document.activeElement))){
+      e.preventDefault(); ultimo.focus();
+    } else if(!e.shiftKey && (document.activeElement === ultimo || !wel.contains(document.activeElement))){
+      e.preventDefault(); primero.focus();
+    }
+  });
   setTimeout(() => { (campo.hidden ? btn : input).focus(); }, 400);
 })();
 
